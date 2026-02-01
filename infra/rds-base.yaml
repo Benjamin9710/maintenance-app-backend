@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: RDS PostgreSQL base infrastructure for backend-app (per-environment)
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Short environment name (e.g. dev, prod)
+    AllowedPattern: '^[a-zA-Z0-9-]+$'
+
+  DbName:
+    Type: String
+    Description: Name of the initial database to create
+    Default: backendapp
+
+Resources:
+  BackendAppVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'backend-app-${EnvironmentName}-vpc'
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub 'backend-app-${EnvironmentName}-igw'
+
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref BackendAppVpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref BackendAppVpc
+      CidrBlock: 10.20.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'backend-app-${EnvironmentName}-public-a'
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref BackendAppVpc
+      CidrBlock: 10.20.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'backend-app-${EnvironmentName}-public-b'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref BackendAppVpc
+      Tags:
+        - Key: Name
+          Value: !Sub 'backend-app-${EnvironmentName}-public-rt'
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  BackendAppDbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub 'backend-app-${EnvironmentName}-db-subnet-group'
+      SubnetIds:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+      DBSubnetGroupName: !Sub 'backend-app-${EnvironmentName}-db-subnet-group'
+
+  BackendAppDbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 'Security group for backend-app RDS (${EnvironmentName})'
+      VpcId: !Ref BackendAppVpc
+      SecurityGroupIngress:
+        # Dev-only: allow PostgreSQL from anywhere. Tighten this later.
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub 'backend-app-${EnvironmentName}-db-sg'
+
+  BackendAppDbInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub 'backend-app-${EnvironmentName}-db'
+      Engine: postgres
+      DBName: !Ref DbName
+      MasterUsername: !Sub '{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-username:SecretString}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-password:SecretString}}'
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      PubliclyAccessible: true
+      MultiAZ: false
+      AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: 0
+      DeletionProtection: false
+      VPCSecurityGroups:
+        - !Ref BackendAppDbSecurityGroup
+      DBSubnetGroupName: !Ref BackendAppDbSubnetGroup
+
+Outputs:
+  DbEndpointAddress:
+    Description: RDS endpoint address
+    Value: !GetAtt BackendAppDbInstance.Endpoint.Address
+    Export:
+      Name: !Sub 'backend-app-${EnvironmentName}-DbEndpointAddress'
+
+  DbEndpointPort:
+    Description: RDS endpoint port
+    Value: !GetAtt BackendAppDbInstance.Endpoint.Port
+    Export:
+      Name: !Sub 'backend-app-${EnvironmentName}-DbEndpointPort'
+
+  DbName:
+    Description: Database name
+    Value: !Ref DbName
+    Export:
+      Name: !Sub 'backend-app-${EnvironmentName}-DbName'

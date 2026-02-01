@@ -1,0 +1,181 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Backend App - SAM template
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Description: Short environment name (e.g. dev, prod, local)
+    Default: local
+    AllowedPattern: '^[a-zA-Z0-9-]+$'
+
+  UseRds:
+    Type: String
+    Description: Whether to use RDS + Secrets Manager for DB configuration
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+Conditions:
+  UseRdsCondition: !Equals [!Ref UseRds, 'true']
+  UseLocalDynamo: !Equals [!Ref EnvironmentName, 'local']
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Handler: index.handler
+    Timeout: 10
+    MemorySize: 128
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        NODE_OPTIONS: '--enable-source-maps'
+        DB_HOST:
+          Fn::If:
+            - UseRdsCondition
+            - Fn::ImportValue:
+                Fn::Sub: 'backend-app-${EnvironmentName}-DbEndpointAddress'
+            - 'host.docker.internal'
+        DB_PORT:
+          Fn::If:
+            - UseRdsCondition
+            - Fn::ImportValue:
+                Fn::Sub: 'backend-app-${EnvironmentName}-DbEndpointPort'
+            - '5432'
+        DB_NAME:
+          Fn::If:
+            - UseRdsCondition
+            - Fn::ImportValue:
+                Fn::Sub: 'backend-app-${EnvironmentName}-DbName'
+            - 'backend_app'
+        DB_USER: !If
+          - UseRdsCondition
+          - !Sub '{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-username:SecretString}}'
+          - 'backend_app'
+        DB_PASSWORD: !If
+          - UseRdsCondition
+          - !Sub '{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-password:SecretString}}'
+          - 'backend_app'
+        DB_SSL: !If
+          - UseRdsCondition
+          - 'true'
+          - 'false'
+        DB_SSL_CA_PATH: 'certs/ap-southeast-2-bundle.pem'
+        DYNAMO_REGION: 'ap-southeast-2'
+        DYNAMO_ENDPOINT:
+          Fn::If:
+            - UseLocalDynamo
+            - 'http://host.docker.internal:9000'
+            - !Ref "AWS::NoValue"
+        DYNAMO_TABLE_PREFIX: 'backend-app-'
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: v1
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: openapi/api.yaml
+
+  HealthCheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-HealthCheckFunction'
+      CodeUri: .
+      Handler: src/handlers/healthCheck.handler
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/healthCheck.ts
+
+  DbHealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-DbHealthFunction'
+      CodeUri: .
+      Handler: src/handlers/dbHealth.handler
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/dbHealth.ts
+        Loader:
+          - .pem=text
+
+  DynamoHealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-DynamoHealthFunction'
+      CodeUri: .
+      Handler: src/handlers/dynamoHealth.handler
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/dynamoHealth.ts
+
+  HealthCheckFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HealthCheckFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  DynamoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'backend-app-table'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+
+  DbHealthFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DbHealthFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  DynamoHealthFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DynamoHealthFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+Outputs:
+  HttpApiUrl:
+    Description: Base URL for the HTTP API
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/v1'

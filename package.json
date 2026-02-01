@@ -1,0 +1,36 @@
+{
+  "name": "backend-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint .",
+    "sam:start": "sam build && sam local start-api -t .aws-sam/build/template.yaml",
+    "sam:build": "sam build",
+    "sam:deploy": "sam deploy",
+    "presam:start": "npm run build",
+    "presam:build": "npm run build"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.158",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.19.1",
+    "@types/pg": "^8.15.6",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "eslint": "^9.39.1",
+    "jest": "^30.2.0",
+    "prettier": "^3.6.2",
+    "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.932.0",
+    "@aws-sdk/lib-dynamodb": "^3.932.0",
+    "esbuild": "^0.27.0",
+    "pg": "^8.11.0"
+  }
+}

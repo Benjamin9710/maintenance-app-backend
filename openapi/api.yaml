@@ -1,0 +1,98 @@
+openapi: 3.0.3
+info:
+  title: Backend App API
+  version: 0.1.0
+servers:
+  - url: /v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Successful health check
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthCheckFunction.Arn}/invocations
+  
+  /db/health:
+    get:
+      summary: Database health check
+      operationId: getDbHealth
+      responses:
+        '200':
+          description: Database reachable and responding
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  latencyMs:
+                    type: number
+        '500':
+          description: Database not reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DbHealthFunction.Arn}/invocations
+  
+  /dynamo/health:
+    get:
+      summary: DynamoDB health check
+      operationId: getDynamoHealth
+      responses:
+        '200':
+          description: DynamoDB reachable and responding
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  latencyMs:
+                    type: number
+        '500':
+          description: DynamoDB not reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DynamoHealthFunction.Arn}/invocations

@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: backend_app
+      POSTGRES_USER: backend_app
+      POSTGRES_PASSWORD: backend_app
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    restart: unless-stopped
+    ports:
+      - '9000:8000'
+    command: -jar DynamoDBLocal.jar -sharedDb
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+
+volumes:
+  postgres_data:
+  dynamodb_data:
