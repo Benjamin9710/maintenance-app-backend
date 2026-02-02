@@ -1,1 +1,6 @@
+# Build residue
 .aws-sam
+dist
+
+# Dependencies
+node_modules
