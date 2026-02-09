@@ -28,7 +28,51 @@ paths:
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthCheckFunction.Arn}/invocations
-  
+
+  /me:
+    get:
+      summary: Get current user identity
+      operationId: getMe
+      responses:
+        '200':
+          description: User identity information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sub:
+                    type: string
+                  email:
+                    type: string
+                  email_verified:
+                    type: boolean
+                  given_name:
+                    type: string
+                  family_name:
+                    type: string
+                  exp:
+                    type: number
+                  iat:
+                    type: number
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  message:
+                    type: string
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MeFunction.Arn}/invocations
+
   /db/health:
     get:
       summary: Database health check
@@ -62,7 +106,7 @@ paths:
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DbHealthFunction.Arn}/invocations
-  
+
   /dynamo/health:
     get:
       summary: DynamoDB health check
