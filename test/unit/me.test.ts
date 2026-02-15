@@ -1,23 +1,20 @@
 import { handler } from '../../src/handlers/me';
 import { APIGatewayProxyEventV2 } from 'aws-lambda';
 
+jest.mock('../../src/utils/sessionAuth');
+
 describe('me handler', () => {
-  it('returns user identity when JWT claims are present', async () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('returns user identity when session token is valid', async () => {
+    const { validateSessionToken } = require('../../src/utils/sessionAuth');
+    validateSessionToken.mockResolvedValue({ sub: 'user-123', email: 'user@example.com' });
+
     const mockEvent = {
-      requestContext: {
-        authorizer: {
-          jwt: {
-            claims: {
-              sub: 'user-123',
-              email: 'user@example.com',
-              email_verified: 'true',
-              exp: '1640995200',
-              iat: '1640991600',
-              given_name: 'John',
-              family_name: 'Doe',
-            },
-          },
-        },
+      headers: {
+        authorization: 'Bearer valid-token',
       },
     } as unknown as APIGatewayProxyEventV2;
 
@@ -30,18 +27,16 @@ describe('me handler', () => {
     expect(body).toEqual({
       sub: 'user-123',
       email: 'user@example.com',
-      email_verified: true,
-      exp: 1640995200,
-      iat: 1640991600,
-      given_name: 'John',
-      family_name: 'Doe',
+      email_verified: false,
+      given_name: null,
+      family_name: null,
+      exp: 0,
+      iat: 0,
     });
   });
 
-  it('returns 401 when no JWT claims are present', async () => {
-    const mockEvent = {
-      requestContext: {},
-    } as unknown as APIGatewayProxyEventV2;
+  it('returns 401 when no Authorization header is present', async () => {
+    const mockEvent = {} as unknown as APIGatewayProxyEventV2;
 
     const res = await handler(mockEvent);
     expect(res.statusCode).toBe(401);

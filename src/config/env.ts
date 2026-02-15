@@ -11,6 +11,7 @@ export interface DynamoConfig {
   region: string;
   endpoint?: string;
   tablePrefix: string;
+  sessionsTableName: string;
 }
 
 export const dbConfig: DbConfig = {
@@ -26,4 +27,5 @@ export const dynamoConfig: DynamoConfig = {
   region: process.env.DYNAMO_REGION ?? 'us-west-2',
   endpoint: process.env.DYNAMO_ENDPOINT,
   tablePrefix: process.env.DYNAMO_TABLE_PREFIX ?? 'backend-app-',
+  sessionsTableName: process.env.DYNAMO_SESSIONS_TABLE_NAME ?? 'backend-app-sessions',
 };

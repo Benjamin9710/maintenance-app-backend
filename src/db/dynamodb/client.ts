@@ -5,7 +5,7 @@ import { dynamoConfig } from '../../config/env';
 let client: DynamoDBClient | undefined;
 let docClient: DynamoDBDocumentClient | undefined;
 
-const getClient = (): DynamoDBDocumentClient => {
+export const getClient = (): DynamoDBDocumentClient => {
   if (!client) {
     client = new DynamoDBClient({
       region: dynamoConfig.region,

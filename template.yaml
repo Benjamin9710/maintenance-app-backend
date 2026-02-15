@@ -14,6 +14,20 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: v1
+      CorsConfiguration:
+        AllowOrigins:
+          - 'http://localhost:5173'
+          - 'http://localhost:5174'
+          - 'http://127.0.0.1:5173'
+          - 'http://127.0.0.1:5174'
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        MaxAge: 3600
       DefinitionBody:
         Fn::Transform:
           Name: AWS::Include
@@ -56,6 +70,10 @@ Resources:
       Role:
         Fn::ImportValue:
           Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -126,6 +144,70 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
 
+  AuthSessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-AuthSessionFunction'
+      CodeUri: .
+      Handler: src/handlers/authSession.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/authSession.ts
+
+  AuthSessionFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AuthSessionFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AuthLogoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-AuthLogoutFunction'
+      CodeUri: .
+      Handler: src/handlers/authLogout.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+          COGNITO_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/authLogout.ts
+
+  AuthLogoutFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AuthLogoutFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -154,11 +236,11 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - 'http://localhost:5173'
-        - 'http://localhost:5174'
+        - 'http://localhost:5173/'
+        - 'http://localhost:5174/'
       LogoutURLs:
-        - 'http://localhost:5173'
-        - 'http://localhost:5174'
+        - 'http://localhost:5173/'
+        - 'http://localhost:5174/'
 
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
@@ -213,4 +295,4 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
   CognitoUserPoolDomain:
     Description: Cognito User Pool domain for this stack
-    Value: !Ref CognitoUserPoolDomain
+    Value: !Sub 'https://${CognitoUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'

@@ -1,37 +1,48 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
-import { extractCognitoClaims } from '../config/auth';
+import { validateSessionToken } from '../utils/sessionAuth';
+import { ok, unauthorized } from '../utils/responses';
+
+const getAuthorizationHeader = (event: APIGatewayProxyEventV2): string | null => {
+  const headers = event.headers ?? {};
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === 'authorization') {
+      return value ?? null;
+    }
+  }
+
+  return null;
+};
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
-  const claims = extractCognitoClaims(event);
+  const authHeader = getAuthorizationHeader(event);
 
-  if (!claims) {
-    return {
-      statusCode: 401,
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        error: 'Unauthorized',
-        message: 'No valid JWT claims found',
-      }),
-    };
+  if (!authHeader) {
+    return unauthorized('Missing Authorization header');
   }
 
-  return {
-    statusCode: 200,
-    headers: {
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      sub: claims.sub,
-      email: claims.email,
-      email_verified: claims.email_verified,
-      given_name: claims.given_name,
-      family_name: claims.family_name,
-      exp: claims.exp,
-      iat: claims.iat,
-    }),
-  };
+  const [scheme, token] = authHeader.split(' ');
+
+  if (!scheme || scheme.toLowerCase() !== 'bearer' || !token) {
+    return unauthorized('Invalid Authorization header');
+  }
+
+  try {
+    const validated = await validateSessionToken(token);
+
+    return ok({
+      sub: validated.sub,
+      email: validated.email,
+      email_verified: false,
+      given_name: null,
+      family_name: null,
+      exp: 0,
+      iat: 0,
+    });
+  } catch (error) {
+    console.error('Session validation failed', error);
+    return unauthorized('Invalid session token');
+  }
 };

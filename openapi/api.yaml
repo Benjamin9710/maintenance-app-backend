@@ -140,3 +140,87 @@ paths:
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DynamoHealthFunction.Arn}/invocations
+
+  /auth/session:
+    post:
+      summary: Create API session from Cognito ID token
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idToken:
+                  type: string
+              required:
+                - idToken
+      responses:
+        '200':
+          description: API session created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessionToken:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  user:
+                    type: object
+                    properties:
+                      sub:
+                        type: string
+                      email:
+                        type: string
+                      isProfileComplete:
+                        type: boolean
+                required:
+                  - sessionToken
+                  - expiresAt
+                  - user
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthSessionFunction.Arn}/invocations
+
+  /auth/logout:
+    post:
+      summary: Logout API session
+      operationId: logoutSession
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Session logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: logged_out
+        '401':
+          description: Unauthorized
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthLogoutFunction.Arn}/invocations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
