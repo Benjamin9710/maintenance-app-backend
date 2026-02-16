@@ -6,6 +6,7 @@ export interface ValidatedSession {
   sub: string;
   sessionId: string;
   email?: string;
+  persona: 'manager' | 'contractor';
 }
 
 const nowInSeconds = (): number => Math.floor(Date.now() / 1000);
@@ -32,5 +33,5 @@ export const validateSessionToken = async (token: string): Promise<ValidatedSess
     throw new Error('Session expired');
   }
 
-  return { sub: payload.sub, sessionId: payload.sessionId, email: session.Email };
+  return { sub: payload.sub, sessionId: payload.sessionId, email: session.Email, persona: session.Persona };
 };

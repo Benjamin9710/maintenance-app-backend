@@ -12,6 +12,7 @@ export interface SessionRecord {
   TokenHash: string;
   Email?: string;
   LoggedOutAt?: string;
+  Persona: 'manager' | 'contractor';
 }
 
 export const createSessionForUser = async (
@@ -20,6 +21,7 @@ export const createSessionForUser = async (
   tokenHash: string,
   expiresAt: number,
   email: string | null,
+  persona: 'manager' | 'contractor',
 ): Promise<void> => {
   const client = getClient();
 
@@ -34,6 +36,7 @@ export const createSessionForUser = async (
     CreatedAt: createdAt,
     ExpiresAt: expiresAt,
     TokenHash: tokenHash,
+    Persona: persona,
   };
 
   if (email) {

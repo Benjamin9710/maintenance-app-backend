@@ -22,10 +22,29 @@ describe('sessionAuth', () => {
         SK: 'SESSION#session-123',
         TokenHash: createHash('sha256').update('valid-token').digest('hex'),
         ExpiresAt: Math.floor(Date.now() / 1000) + 3600,
+        Persona: 'manager',
       });
 
       const result = await validateSessionToken('valid-token');
-      expect(result).toEqual({ sub: 'user123', sessionId: 'session-123', email: undefined });
+      expect(result).toEqual({ sub: 'user123', sessionId: 'session-123', email: undefined, persona: 'manager' });
+    });
+
+    it('returns validated session for contractor persona', async () => {
+      const { verifySessionTokenPayload } = require('../../src/utils/sessionToken');
+      const { getSessionById } = require('../../src/db/dynamodb/sessionsRepository');
+
+      verifySessionTokenPayload.mockReturnValue({ sub: 'user456', sessionId: 'session-456' });
+
+      getSessionById.mockResolvedValue({
+        PK: 'USER#user456',
+        SK: 'SESSION#session-456',
+        TokenHash: createHash('sha256').update('contractor-token').digest('hex'),
+        ExpiresAt: Math.floor(Date.now() / 1000) + 3600,
+        Persona: 'contractor',
+      });
+
+      const result = await validateSessionToken('contractor-token');
+      expect(result).toEqual({ sub: 'user456', sessionId: 'session-456', email: undefined, persona: 'contractor' });
     });
 
     it('throws error for invalid token payload', async () => {

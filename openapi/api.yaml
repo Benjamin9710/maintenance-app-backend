@@ -169,6 +169,9 @@ paths:
                   expiresAt:
                     type: string
                     format: date-time
+                  persona:
+                    type: string
+                    enum: [manager, contractor]
                   user:
                     type: object
                     properties:
@@ -181,6 +184,7 @@ paths:
                 required:
                   - sessionToken
                   - expiresAt
+                  - persona
                   - user
         '400':
           description: Bad request

@@ -8,10 +8,16 @@ import { badRequest, ok, unauthorized } from '../utils/responses';
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
-  const verifier = CognitoJwtVerifier.create({
-    userPoolId: process.env.COGNITO_USER_POOL_ID ?? '',
+  const managerVerifier = CognitoJwtVerifier.create({
+    userPoolId: process.env.COGNITO_MANAGER_USER_POOL_ID ?? '',
     tokenUse: 'id',
-    clientId: process.env.COGNITO_USER_POOL_CLIENT_ID ?? '',
+    clientId: process.env.COGNITO_MANAGER_USER_POOL_CLIENT_ID ?? '',
+  });
+
+  const contractorVerifier = CognitoJwtVerifier.create({
+    userPoolId: process.env.COGNITO_CONTRACTOR_USER_POOL_ID ?? '',
+    tokenUse: 'id',
+    clientId: process.env.COGNITO_CONTRACTOR_USER_POOL_CLIENT_ID ?? '',
   });
 
   try {
@@ -33,7 +39,20 @@ export const handler = async (
       return badRequest('idToken is required');
     }
 
-    const claims = await verifier.verify(idToken);
+    let claims: any;
+    let persona: 'manager' | 'contractor';
+
+    try {
+      claims = await managerVerifier.verify(idToken);
+      persona = 'manager';
+    } catch (managerError) {
+      try {
+        claims = await contractorVerifier.verify(idToken);
+        persona = 'contractor';
+      } catch (contractorError) {
+        return unauthorized('Unable to create session from ID token');
+      }
+    }
     const sub = claims.sub as string | undefined;
     const email = (claims as { email?: string }).email ?? null;
 
@@ -45,11 +64,12 @@ export const handler = async (
 
     const expiresAtSeconds = Math.floor(new Date(expiresAt).getTime() / 1000);
 
-    await createSessionForUser(sub, sessionId, tokenHash, expiresAtSeconds, email);
+    await createSessionForUser(sub, sessionId, tokenHash, expiresAtSeconds, email, persona);
 
     return ok({
       sessionToken,
       expiresAt,
+      persona,
       user: {
         sub,
         email: (claims as { email?: string }).email ?? null,

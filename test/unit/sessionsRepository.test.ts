@@ -13,7 +13,7 @@ describe('sessionsRepository', () => {
       const mockClient = { send: jest.fn() };
       getClient.mockReturnValue(mockClient);
 
-      await createSessionForUser('user123', 'session-123', 'hash123', 1640995200, null);
+      await createSessionForUser('user123', 'session-123', 'hash123', 1640995200, null, 'manager');
 
       const sentCommand = mockClient.send.mock.calls[0][0];
       expect(sentCommand.input).toEqual(
@@ -26,6 +26,7 @@ describe('sessionsRepository', () => {
             UserSub: 'user123',
             TokenHash: 'hash123',
             ExpiresAt: 1640995200,
+            Persona: 'manager',
           }),
         }),
       );
@@ -44,6 +45,7 @@ describe('sessionsRepository', () => {
             UserSub: 'user123',
             TokenHash: 'hash123',
             ExpiresAt: 1640995200,
+            Persona: 'manager',
           },
         }),
       };
@@ -57,6 +59,7 @@ describe('sessionsRepository', () => {
         UserSub: 'user123',
         TokenHash: 'hash123',
         ExpiresAt: 1640995200,
+        Persona: 'manager',
       });
     });
 
