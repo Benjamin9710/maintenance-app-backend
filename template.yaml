@@ -222,6 +222,8 @@ Resources:
         - email
       AutoVerifiedAttributes:
         - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -262,6 +264,8 @@ Resources:
         - email
       AutoVerifiedAttributes:
         - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
 
   CognitoContractorUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -302,6 +306,8 @@ Resources:
         - email
       AutoVerifiedAttributes:
         - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
 
   CognitoAdminUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -342,31 +348,8 @@ Resources:
         - email
       AutoVerifiedAttributes:
         - email
-
-  CognitoAdminUserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      ClientName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool-client'
-      UserPoolId: !Ref CognitoAdminUserPool
-      GenerateSecret: false
-      ExplicitAuthFlows:
-        - ALLOW_REFRESH_TOKEN_AUTH
-        - ALLOW_USER_SRP_AUTH
-      SupportedIdentityProviders:
-        - COGNITO
-      AllowedOAuthFlowsUserPoolClient: true
-      AllowedOAuthFlows:
-        - code
-      AllowedOAuthScopes:
-        - openid
-        - email
-        - profile
-      CallbackURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
-      LogoutURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
 
   CognitoAdminUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
