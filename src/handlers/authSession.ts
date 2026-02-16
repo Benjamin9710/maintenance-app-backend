@@ -20,6 +20,12 @@ export const handler = async (
     clientId: process.env.COGNITO_CONTRACTOR_USER_POOL_CLIENT_ID ?? '',
   });
 
+  const adminVerifier = CognitoJwtVerifier.create({
+    userPoolId: process.env.COGNITO_ADMIN_USER_POOL_ID ?? '',
+    tokenUse: 'id',
+    clientId: process.env.COGNITO_ADMIN_USER_POOL_CLIENT_ID ?? '',
+  });
+
   try {
     if (!event.body) {
       return badRequest('Missing request body');
@@ -40,7 +46,7 @@ export const handler = async (
     }
 
     let claims: any;
-    let persona: 'manager' | 'contractor';
+    let persona: 'manager' | 'contractor' | 'admin';
 
     try {
       claims = await managerVerifier.verify(idToken);
@@ -50,7 +56,12 @@ export const handler = async (
         claims = await contractorVerifier.verify(idToken);
         persona = 'contractor';
       } catch (contractorError) {
-        return unauthorized('Unable to create session from ID token');
+        try {
+          claims = await adminVerifier.verify(idToken);
+          persona = 'admin';
+        } catch (adminError) {
+          return unauthorized('Unable to create session from ID token');
+        }
       }
     }
     const sub = claims.sub as string | undefined;

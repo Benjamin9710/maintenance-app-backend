@@ -6,7 +6,7 @@ export interface ValidatedSession {
   sub: string;
   sessionId: string;
   email?: string;
-  persona: 'manager' | 'contractor';
+  persona: 'manager' | 'contractor' | 'admin';
 }
 
 const nowInSeconds = (): number => Math.floor(Date.now() / 1000);

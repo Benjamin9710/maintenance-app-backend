@@ -160,6 +160,8 @@ Resources:
           COGNITO_MANAGER_USER_POOL_CLIENT_ID: !Ref CognitoUserPoolClient
           COGNITO_CONTRACTOR_USER_POOL_ID: !Ref CognitoContractorUserPool
           COGNITO_CONTRACTOR_USER_POOL_CLIENT_ID: !Ref CognitoContractorUserPoolClient
+          COGNITO_ADMIN_USER_POOL_ID: !Ref CognitoAdminUserPool
+          COGNITO_ADMIN_USER_POOL_CLIENT_ID: !Ref CognitoAdminUserPoolClient
           DYNAMO_REGION: !Ref AWS::Region
           DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
     Metadata:
@@ -292,6 +294,86 @@ Resources:
       Domain: !Sub '${AWS::StackName}-${EnvironmentName}-contractor-auth'
       UserPoolId: !Ref CognitoContractorUserPool
 
+  CognitoAdminUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool'
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+
+  CognitoAdminUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool-client'
+      UserPoolId: !Ref CognitoAdminUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        - 'http://localhost:5173/'
+        - 'http://localhost:5174/'
+      LogoutURLs:
+        - 'http://localhost:5173/'
+        - 'http://localhost:5174/'
+
+  CognitoContractorUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub '${AWS::StackName}-${EnvironmentName}-contractor-auth'
+      UserPoolId: !Ref CognitoContractorUserPool
+
+  CognitoAdminUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool'
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+
+  CognitoAdminUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool-client'
+      UserPoolId: !Ref CognitoAdminUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      CallbackURLs:
+        - 'http://localhost:5173/'
+        - 'http://localhost:5174/'
+      LogoutURLs:
+        - 'http://localhost:5173/'
+        - 'http://localhost:5174/'
+
+  CognitoAdminUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub '${AWS::StackName}-${EnvironmentName}-admin-auth'
+      UserPoolId: !Ref CognitoAdminUserPool
+
   DynamoTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -349,3 +431,12 @@ Outputs:
   CognitoContractorUserPoolDomain:
     Description: Cognito Contractor User Pool domain for this stack
     Value: !Sub 'https://${CognitoContractorUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+  CognitoAdminUserPoolId:
+    Description: ID of the Cognito Admin User Pool for this stack
+    Value: !Ref CognitoAdminUserPool
+  CognitoAdminUserPoolClientId:
+    Description: Client ID for the Cognito Admin User Pool in this stack
+    Value: !Ref CognitoAdminUserPoolClient
+  CognitoAdminUserPoolDomain:
+    Description: Cognito Admin User Pool domain for this stack
+    Value: !Sub 'https://${CognitoAdminUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
