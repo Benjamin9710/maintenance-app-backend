@@ -12,6 +12,7 @@
   - parse/validate inputs
   - call lower-level modules
   - map results/errors to HTTP responses
+- Handler response construction conventions live in `src/handlers/AGENTS.md`.
 - Keep DB logic out of handlers; delegate to `src/db/**`.
 - Avoid tight coupling between DB layer and HTTP concerns:
   - DB layer returns data/domain objects or typed results

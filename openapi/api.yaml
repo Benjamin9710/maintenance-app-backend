@@ -1,17 +1,22 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
   title: Backend App API
-  version: 0.1.0
+  version: 1.0.0
+  description: API for maintenance app backend
+
 servers:
-  - url: /v1
+  - url: https://{ApiId}.execute-api.{Region}.amazonaws.com/v1
+    description: Production server
+
 paths:
   /health:
     get:
       summary: Health check
-      operationId: getHealth
+      operationId: healthCheck
+      description: Basic health check endpoint
       responses:
         '200':
-          description: Successful health check
+          description: OK
           content:
             application/json:
               schema:
@@ -19,9 +24,7 @@ paths:
                 properties:
                   status:
                     type: string
-                  timestamp:
-                    type: string
-                    format: date-time
+                    example: healthy
       x-amazon-apigateway-integration:
         type: aws_proxy
         payloadFormatVersion: '2.0'
@@ -29,57 +32,14 @@ paths:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthCheckFunction.Arn}/invocations
 
-  /me:
-    get:
-      summary: Get current user identity
-      operationId: getMe
-      responses:
-        '200':
-          description: User identity information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  sub:
-                    type: string
-                  email:
-                    type: string
-                  email_verified:
-                    type: boolean
-                  given_name:
-                    type: string
-                  family_name:
-                    type: string
-                  exp:
-                    type: number
-                  iat:
-                    type: number
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                  message:
-                    type: string
-      x-amazon-apigateway-integration:
-        type: aws_proxy
-        payloadFormatVersion: '2.0'
-        httpMethod: POST
-        uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MeFunction.Arn}/invocations
-
   /db/health:
     get:
       summary: Database health check
-      operationId: getDbHealth
+      operationId: dbHealth
+      description: Check database connectivity
       responses:
         '200':
-          description: Database reachable and responding
+          description: Database connection successful
           content:
             application/json:
               schema:
@@ -87,19 +47,9 @@ paths:
                 properties:
                   status:
                     type: string
-                  latencyMs:
-                    type: number
+                    example: connected
         '500':
-          description: Database not reachable
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          description: Database connection failed
       x-amazon-apigateway-integration:
         type: aws_proxy
         payloadFormatVersion: '2.0'
@@ -110,10 +60,11 @@ paths:
   /dynamo/health:
     get:
       summary: DynamoDB health check
-      operationId: getDynamoHealth
+      operationId: dynamoHealth
+      description: Check DynamoDB connectivity
       responses:
         '200':
-          description: DynamoDB reachable and responding
+          description: DynamoDB connection successful
           content:
             application/json:
               schema:
@@ -121,19 +72,9 @@ paths:
                 properties:
                   status:
                     type: string
-                  latencyMs:
-                    type: number
+                    example: connected
         '500':
-          description: DynamoDB not reachable
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+          description: DynamoDB connection failed
       x-amazon-apigateway-integration:
         type: aws_proxy
         payloadFormatVersion: '2.0'
@@ -141,10 +82,48 @@ paths:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DynamoHealthFunction.Arn}/invocations
 
+  /me:
+    get:
+      summary: Get current user info
+      operationId: me
+      security:
+        - bearerAuth: []
+      description: Retrieve information about the currently authenticated user
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sub:
+                    type: string
+                    description: User subject identifier
+                  email:
+                    type: string
+                    nullable: true
+                    description: User email address
+                  persona:
+                    type: string
+                    enum: [manager, contractor, admin]
+                    description: User persona/role
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MeFunction.Arn}/invocations
+
   /auth/session:
     post:
-      summary: Create API session from Cognito ID token
+      summary: Create session
       operationId: createSession
+      description: Create a new session after successful authentication
       requestBody:
         required: true
         content:
@@ -152,40 +131,30 @@ paths:
             schema:
               type: object
               properties:
-                idToken:
+                token:
                   type: string
+                  description: JWT token from Cognito
+                persona:
+                  type: string
+                  enum: [manager, contractor, admin]
+                  description: User persona/role
               required:
-                - idToken
+                - token
+                - persona
       responses:
         '200':
-          description: API session created
+          description: Session created
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  sessionToken:
+                  token:
                     type: string
+                    description: Session token
                   expiresAt:
-                    type: string
-                    format: date-time
-                  persona:
-                    type: string
-                    enum: [manager, contractor, admin]
-                  user:
-                    type: object
-                    properties:
-                      sub:
-                        type: string
-                      email:
-                        type: string
-                      isProfileComplete:
-                        type: boolean
-                required:
-                  - sessionToken
-                  - expiresAt
-                  - persona
-                  - user
+                    type: integer
+                    description: Token expiration timestamp
         '400':
           description: Bad request
         '401':
@@ -199,21 +168,14 @@ paths:
 
   /auth/logout:
     post:
-      summary: Logout API session
+      summary: Logout session
       operationId: logoutSession
       security:
         - bearerAuth: []
+      description: Invalidate the current session
       responses:
         '200':
-          description: Session logged out
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: logged_out
+          description: Session invalidated
         '401':
           description: Unauthorized
       x-amazon-apigateway-integration:
@@ -223,8 +185,170 @@ paths:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthLogoutFunction.Arn}/invocations
 
+  /admin/managers:
+    get:
+      summary: List managers (admin only)
+      operationId: listManagers
+      security:
+        - bearerAuth: []
+      description: Retrieve list of all managers in the system with pagination support (updated 2026-02-19)
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of managers to return (1-60, default = 60)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+            default: 60
+        - name: paginationToken
+          in: query
+          description: Token for pagination (from previous response)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of managers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  managers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cognitoSub:
+                          type: string
+                        username:
+                          type: string
+                        email:
+                          type: string
+                          nullable: true
+                        displayName:
+                          type: string
+                          nullable: true
+                        givenName:
+                          type: string
+                          nullable: true
+                        familyName:
+                          type: string
+                          nullable: true
+                        phoneNumber:
+                          type: string
+                          nullable: true
+                        status:
+                          type: string
+                        enabled:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                        lastModifiedAt:
+                          type: string
+                          format: date-time
+                  paginationToken:
+                    type: string
+                    nullable: true
+                    description: Token for next page (null if no more pages)
+                  hasMore:
+                    type: boolean
+                    description: Whether more pages are available
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminListManagersFunction.Arn}/invocations
+
+    post:
+      summary: Create manager (admin only)
+      operationId: createManager
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                displayName:
+                  type: string
+                givenName:
+                  type: string
+                familyName:
+                  type: string
+                phoneNumber:
+                  type: string
+                  description: E.164 format recommended (e.g. +61400111222)
+              required:
+                - email
+                - displayName
+                - givenName
+                - familyName
+                - phoneNumber
+      responses:
+        '200':
+          description: Manager created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cognitoSub:
+                    type: string
+                  username:
+                    type: string
+                  email:
+                    type: string
+                    nullable: true
+                  displayName:
+                    type: string
+                    nullable: true
+                  givenName:
+                    type: string
+                    nullable: true
+                  familyName:
+                    type: string
+                    nullable: true
+                  phoneNumber:
+                    type: string
+                    nullable: true
+                  status:
+                    type: string
+                  enabled:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  lastModifiedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreateManagerFunction.Arn}/invocations
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT

@@ -1,4 +1,5 @@
-import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+import { ok, internalError } from '../utils/responses';
 import { query } from '../db/postgres/client';
 
 export const handler = async (): Promise<APIGatewayProxyStructuredResultV2> => {
@@ -8,28 +9,13 @@ export const handler = async (): Promise<APIGatewayProxyStructuredResultV2> => {
     await query('SELECT 1');
     const durationMs = Date.now() - startedAt;
 
-    return {
-      statusCode: 200,
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        status: 'ok',
-        latencyMs: durationMs,
-      }),
-    };
+    return ok({
+      status: 'ok',
+      latencyMs: durationMs,
+    });
   } catch (error) {
     console.error('Database connectivity check failed:', error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        status: 'error',
-        message: 'Database connectivity check failed',
-      }),
-    };
+    return internalError('Database connectivity check failed');
   }
 };

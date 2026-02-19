@@ -214,6 +214,69 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
 
+  AdminListManagersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-AdminListManagersFunction'
+      CodeUri: .
+      Handler: src/handlers/adminListManagers.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          COGNITO_MANAGER_USER_POOL_ID: !Ref CognitoUserPool
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to list managers (deployed 2026-02-17, updated 2026-02-19 with Cognito permissions)
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminListManagers.ts
+
+  AdminListManagersFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminListManagersFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AdminCreateManagerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-AdminCreateManagerFunction'
+      CodeUri: .
+      Handler: src/handlers/adminCreateManager.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          COGNITO_MANAGER_USER_POOL_ID: !Ref CognitoUserPool
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminCreateManager.ts
+
+  AdminCreateManagerFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminCreateManagerFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -333,23 +396,6 @@ Resources:
       LogoutURLs:
         - 'http://localhost:5173/'
         - 'http://localhost:5174/'
-
-  CognitoContractorUserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties:
-      Domain: !Sub '${AWS::StackName}-${EnvironmentName}-contractor-auth'
-      UserPoolId: !Ref CognitoContractorUserPool
-
-  CognitoAdminUserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool'
-      UsernameAttributes:
-        - email
-      AutoVerifiedAttributes:
-        - email
-      AdminCreateUserConfig:
-        AllowAdminCreateUserOnly: true
 
   CognitoAdminUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain

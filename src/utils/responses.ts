@@ -1,4 +1,4 @@
-import { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+import type { APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
 export const ok = <T>(body: T): APIGatewayProxyStructuredResultV2 => ({
   statusCode: 200,
@@ -16,6 +16,12 @@ export const unauthorized = (message: string = 'Unauthorized'): APIGatewayProxyS
   statusCode: 401,
   headers: { 'content-type': 'application/json' },
   body: JSON.stringify({ error: 'Unauthorized', message }),
+});
+
+export const forbidden = (message: string = 'Forbidden'): APIGatewayProxyStructuredResultV2 => ({
+  statusCode: 403,
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ error: 'Forbidden', message }),
 });
 
 export const internalError = (message: string = 'Internal Server Error'): APIGatewayProxyStructuredResultV2 => ({

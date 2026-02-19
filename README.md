@@ -120,13 +120,6 @@ Once SAM is running, you can call:
   ```bash
   curl http://127.0.0.1:3000/dynamo/health
   ```
-
-Depending on how HttpApi stages are configured, you may also need the `/v1` prefix:
-
-```bash
-curl http://127.0.0.1:3000/v1/health
-curl http://127.0.0.1:3000/v1/db/health
-curl http://127.0.0.1:3000/v1/dynamo/health
 ```
 
 ## Environment configuration
