@@ -277,6 +277,70 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
 
+  AdminListContractorsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-AdminListContractorsFunction'
+      CodeUri: .
+      Handler: src/handlers/adminListContractors.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          COGNITO_CONTRACTOR_USER_POOL_ID: !Ref CognitoContractorUserPool
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to list contractors (deployed 2026-02-21)
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminListContractors.ts
+
+  AdminListContractorsFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminListContractorsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AdminCreateContractorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-AdminCreateContractorFunction'
+      CodeUri: .
+      Handler: src/handlers/adminCreateContractor.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Environment:
+        Variables:
+          COGNITO_CONTRACTOR_USER_POOL_ID: !Ref CognitoContractorUserPool
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to create contractors (deployed 2026-02-21)
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminCreateContractor.ts
+
+  AdminCreateContractorFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminCreateContractorFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:

@@ -346,6 +346,167 @@ paths:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreateManagerFunction.Arn}/invocations
 
+  /admin/contractors:
+    get:
+      summary: List contractors (admin only)
+      operationId: listContractors
+      security:
+        - bearerAuth: []
+      description: Retrieve list of all contractors in the system with pagination support
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of contractors to return (1-60, default = 60)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 60
+            default: 60
+        - name: paginationToken
+          in: query
+          description: Token for pagination (from previous response)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of contractors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contractors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cognitoSub:
+                          type: string
+                        username:
+                          type: string
+                        email:
+                          type: string
+                          nullable: true
+                        displayName:
+                          type: string
+                          nullable: true
+                        givenName:
+                          type: string
+                          nullable: true
+                        familyName:
+                          type: string
+                          nullable: true
+                        phoneNumber:
+                          type: string
+                          nullable: true
+                        status:
+                          type: string
+                        enabled:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+                        lastModifiedAt:
+                          type: string
+                          format: date-time
+                  paginationToken:
+                    type: string
+                    nullable: true
+                    description: Token for next page (null if no more pages)
+                  hasMore:
+                    type: boolean
+                    description: Whether more pages are available
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminListContractorsFunction.Arn}/invocations
+
+    post:
+      summary: Create contractor (admin only)
+      operationId: createContractor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                displayName:
+                  type: string
+                givenName:
+                  type: string
+                familyName:
+                  type: string
+                phoneNumber:
+                  type: string
+                  description: E.164 format recommended (e.g. +61400111222)
+              required:
+                - email
+                - displayName
+                - givenName
+                - familyName
+                - phoneNumber
+      responses:
+        '200':
+          description: Contractor created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cognitoSub:
+                    type: string
+                  username:
+                    type: string
+                  email:
+                    type: string
+                    nullable: true
+                  displayName:
+                    type: string
+                    nullable: true
+                  givenName:
+                    type: string
+                    nullable: true
+                  familyName:
+                    type: string
+                    nullable: true
+                  phoneNumber:
+                    type: string
+                    nullable: true
+                  status:
+                    type: string
+                  enabled:
+                    type: boolean
+                  createdAt:
+                    type: string
+                    format: date-time
+                  lastModifiedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: '2.0'
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreateContractorFunction.Arn}/invocations
+
 components:
   securitySchemes:
     bearerAuth:
