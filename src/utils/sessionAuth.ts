@@ -57,3 +57,11 @@ export const requireAdminSession = async (authHeader: string | null | undefined)
   }
   return session;
 };
+
+export const requireManagerSession = async (authHeader: string | null | undefined): Promise<ValidatedSession> => {
+  const session = await requireAuthenticatedSession(authHeader);
+  if (session.persona !== 'manager') {
+    throw new AuthorizationError('Forbidden');
+  }
+  return session;
+};

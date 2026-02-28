@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Backend App - SAM template
 
@@ -7,7 +7,7 @@ Parameters:
     Type: String
     Description: Short environment name (e.g. dev, prod, local)
     Default: local
-    AllowedPattern: '^[a-zA-Z0-9-]+$'
+    AllowedPattern: "^[a-zA-Z0-9-]+$"
 
 Resources:
   HttpApi:
@@ -16,10 +16,10 @@ Resources:
       StageName: v1
       CorsConfiguration:
         AllowOrigins:
-          - 'http://localhost:5173'
-          - 'http://localhost:5174'
-          - 'http://127.0.0.1:5173'
-          - 'http://127.0.0.1:5174'
+          - "http://localhost:5173"
+          - "http://localhost:5174"
+          - "http://127.0.0.1:5173"
+          - "http://127.0.0.1:5174"
         AllowMethods:
           - GET
           - POST
@@ -37,13 +37,13 @@ Resources:
   HealthCheckFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-HealthCheckFunction'
+      FunctionName: !Sub "${AWS::StackName}-HealthCheckFunction"
       CodeUri: .
       Handler: src/handlers/healthCheck.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -63,13 +63,13 @@ Resources:
   MeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-MeFunction'
+      FunctionName: !Sub "${AWS::StackName}-MeFunction"
       CodeUri: .
       Handler: src/handlers/me.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           DYNAMO_REGION: !Ref AWS::Region
@@ -85,13 +85,13 @@ Resources:
   DbHealthFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-DbHealthFunction'
+      FunctionName: !Sub "${AWS::StackName}-DbHealthFunction"
       CodeUri: .
       Handler: src/handlers/dbHealth.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -105,13 +105,13 @@ Resources:
   DynamoHealthFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-DynamoHealthFunction'
+      FunctionName: !Sub "${AWS::StackName}-DynamoHealthFunction"
       CodeUri: .
       Handler: src/handlers/dynamoHealth.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -147,13 +147,13 @@ Resources:
   AuthSessionFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-AuthSessionFunction'
+      FunctionName: !Sub "${AWS::StackName}-AuthSessionFunction"
       CodeUri: .
       Handler: src/handlers/authSession.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           COGNITO_MANAGER_USER_POOL_ID: !Ref CognitoUserPool
@@ -183,13 +183,13 @@ Resources:
   AuthLogoutFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-AuthLogoutFunction'
+      FunctionName: !Sub "${AWS::StackName}-AuthLogoutFunction"
       CodeUri: .
       Handler: src/handlers/authLogout.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           COGNITO_MANAGER_USER_POOL_ID: !Ref CognitoUserPool
@@ -217,13 +217,13 @@ Resources:
   AdminListManagersFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-AdminListManagersFunction'
+      FunctionName: !Sub "${AWS::StackName}-AdminListManagersFunction"
       CodeUri: .
       Handler: src/handlers/adminListManagers.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           COGNITO_MANAGER_USER_POOL_ID: !Ref CognitoUserPool
@@ -249,13 +249,13 @@ Resources:
   AdminCreateManagerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-AdminCreateManagerFunction'
+      FunctionName: !Sub "${AWS::StackName}-AdminCreateManagerFunction"
       CodeUri: .
       Handler: src/handlers/adminCreateManager.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           COGNITO_MANAGER_USER_POOL_ID: !Ref CognitoUserPool
@@ -280,13 +280,13 @@ Resources:
   AdminListContractorsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-AdminListContractorsFunction'
+      FunctionName: !Sub "${AWS::StackName}-AdminListContractorsFunction"
       CodeUri: .
       Handler: src/handlers/adminListContractors.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           COGNITO_CONTRACTOR_USER_POOL_ID: !Ref CognitoContractorUserPool
@@ -312,13 +312,13 @@ Resources:
   AdminCreateContractorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${AWS::StackName}-AdminCreateContractorFunction'
+      FunctionName: !Sub "${AWS::StackName}-AdminCreateContractorFunction"
       CodeUri: .
       Handler: src/handlers/adminCreateContractor.handler
       Runtime: nodejs22.x
       Role:
         Fn::ImportValue:
-          Fn::Sub: 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
       Environment:
         Variables:
           COGNITO_CONTRACTOR_USER_POOL_ID: !Ref CognitoContractorUserPool
@@ -341,10 +341,205 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
 
+  AdminListManagerPropertiesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AdminListManagerPropertiesFunction"
+      CodeUri: .
+      Handler: src/handlers/adminListManagerProperties.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
+      Environment:
+        Variables:
+          DB_HOST: "{{resolve:secretsmanager:DB_HOST:SecretString}}"
+          DB_PORT: "{{resolve:secretsmanager:DB_PORT:SecretString}}"
+          DB_NAME: "{{resolve:secretsmanager:DB_NAME:SecretString}}"
+          DB_USER: "{{resolve:secretsmanager:DB_USER:SecretString}}"
+          DB_PASSWORD: "{{resolve:secretsmanager:DB_PASSWORD:SecretString}}"
+          DB_SSL: "true"
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to list properties for a manager
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminListManagerProperties.ts
+        Loader:
+          - .pem=text
+
+  AdminListManagerPropertiesFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminListManagerPropertiesFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AdminCreatePropertyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AdminCreatePropertyFunction"
+      CodeUri: .
+      Handler: src/handlers/adminCreateProperty.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
+      Environment:
+        Variables:
+          DB_HOST: "{{resolve:secretsmanager:DB_HOST:SecretString}}"
+          DB_PORT: "{{resolve:secretsmanager:DB_PORT:SecretString}}"
+          DB_NAME: "{{resolve:secretsmanager:DB_NAME:SecretString}}"
+          DB_USER: "{{resolve:secretsmanager:DB_USER:SecretString}}"
+          DB_PASSWORD: "{{resolve:secretsmanager:DB_PASSWORD:SecretString}}"
+          DB_SSL: "true"
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to create properties
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminCreateProperty.ts
+        Loader:
+          - .pem=text
+
+  AdminCreatePropertyFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminCreatePropertyFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AdminGetPropertyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AdminGetPropertyFunction"
+      CodeUri: .
+      Handler: src/handlers/adminGetProperty.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
+      Environment:
+        Variables:
+          DB_HOST: "{{resolve:secretsmanager:DB_HOST:SecretString}}"
+          DB_PORT: "{{resolve:secretsmanager:DB_PORT:SecretString}}"
+          DB_NAME: "{{resolve:secretsmanager:DB_NAME:SecretString}}"
+          DB_USER: "{{resolve:secretsmanager:DB_USER:SecretString}}"
+          DB_PASSWORD: "{{resolve:secretsmanager:DB_PASSWORD:SecretString}}"
+          DB_SSL: "true"
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to get a property by ID
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminGetProperty.ts
+        Loader:
+          - .pem=text
+
+  AdminGetPropertyFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminGetPropertyFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AdminUpdatePropertyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AdminUpdatePropertyFunction"
+      CodeUri: .
+      Handler: src/handlers/adminUpdateProperty.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
+      Environment:
+        Variables:
+          DB_HOST: "{{resolve:secretsmanager:DB_HOST:SecretString}}"
+          DB_PORT: "{{resolve:secretsmanager:DB_PORT:SecretString}}"
+          DB_NAME: "{{resolve:secretsmanager:DB_NAME:SecretString}}"
+          DB_USER: "{{resolve:secretsmanager:DB_USER:SecretString}}"
+          DB_PASSWORD: "{{resolve:secretsmanager:DB_PASSWORD:SecretString}}"
+          DB_SSL: "true"
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to update properties
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminUpdateProperty.ts
+        Loader:
+          - .pem=text
+
+  AdminUpdatePropertyFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminUpdatePropertyFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
+  AdminArchivePropertyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AdminArchivePropertyFunction"
+      CodeUri: .
+      Handler: src/handlers/adminArchiveProperty.handler
+      Runtime: nodejs22.x
+      Role:
+        Fn::ImportValue:
+          Fn::Sub: "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"
+      Environment:
+        Variables:
+          DB_HOST: "{{resolve:secretsmanager:DB_HOST:SecretString}}"
+          DB_PORT: "{{resolve:secretsmanager:DB_PORT:SecretString}}"
+          DB_NAME: "{{resolve:secretsmanager:DB_NAME:SecretString}}"
+          DB_USER: "{{resolve:secretsmanager:DB_USER:SecretString}}"
+          DB_PASSWORD: "{{resolve:secretsmanager:DB_PASSWORD:SecretString}}"
+          DB_SSL: "true"
+          DYNAMO_REGION: !Ref AWS::Region
+          DYNAMO_SESSIONS_TABLE_NAME: !Ref SessionsTable
+      Description: Admin function to archive properties
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: node22
+        EntryPoints:
+          - src/handlers/adminArchiveProperty.ts
+        Loader:
+          - .pem=text
+
+  AdminArchivePropertyFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminArchivePropertyFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub '${AWS::StackName}-${EnvironmentName}-user-pool'
+      UserPoolName: !Sub "${AWS::StackName}-${EnvironmentName}-user-pool"
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
@@ -355,7 +550,7 @@ Resources:
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub '${AWS::StackName}-${EnvironmentName}-user-pool-client'
+      ClientName: !Sub "${AWS::StackName}-${EnvironmentName}-user-pool-client"
       UserPoolId: !Ref CognitoUserPool
       GenerateSecret: false
       ExplicitAuthFlows:
@@ -371,22 +566,22 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+        - "http://localhost:5173/"
+        - "http://localhost:5174/"
       LogoutURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+        - "http://localhost:5173/"
+        - "http://localhost:5174/"
 
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: !Sub '${AWS::StackName}-${EnvironmentName}-auth'
+      Domain: !Sub "${AWS::StackName}-${EnvironmentName}-auth"
       UserPoolId: !Ref CognitoUserPool
 
   CognitoContractorUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub '${AWS::StackName}-${EnvironmentName}-contractor-user-pool'
+      UserPoolName: !Sub "${AWS::StackName}-${EnvironmentName}-contractor-user-pool"
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
@@ -397,7 +592,7 @@ Resources:
   CognitoContractorUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub '${AWS::StackName}-${EnvironmentName}-contractor-user-pool-client'
+      ClientName: !Sub "${AWS::StackName}-${EnvironmentName}-contractor-user-pool-client"
       UserPoolId: !Ref CognitoContractorUserPool
       GenerateSecret: false
       ExplicitAuthFlows:
@@ -413,22 +608,22 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+        - "http://localhost:5173/"
+        - "http://localhost:5174/"
       LogoutURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+        - "http://localhost:5173/"
+        - "http://localhost:5174/"
 
   CognitoContractorUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: !Sub '${AWS::StackName}-${EnvironmentName}-contractor-auth'
+      Domain: !Sub "${AWS::StackName}-${EnvironmentName}-contractor-auth"
       UserPoolId: !Ref CognitoContractorUserPool
 
   CognitoAdminUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool'
+      UserPoolName: !Sub "${AWS::StackName}-${EnvironmentName}-admin-user-pool"
       UsernameAttributes:
         - email
       AutoVerifiedAttributes:
@@ -439,7 +634,7 @@ Resources:
   CognitoAdminUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub '${AWS::StackName}-${EnvironmentName}-admin-user-pool-client'
+      ClientName: !Sub "${AWS::StackName}-${EnvironmentName}-admin-user-pool-client"
       UserPoolId: !Ref CognitoAdminUserPool
       GenerateSecret: false
       ExplicitAuthFlows:
@@ -455,22 +650,22 @@ Resources:
         - email
         - profile
       CallbackURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+        - "http://localhost:5173/"
+        - "http://localhost:5174/"
       LogoutURLs:
-        - 'http://localhost:5173/'
-        - 'http://localhost:5174/'
+        - "http://localhost:5173/"
+        - "http://localhost:5174/"
 
   CognitoAdminUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: !Sub '${AWS::StackName}-${EnvironmentName}-admin-auth'
+      Domain: !Sub "${AWS::StackName}-${EnvironmentName}-admin-auth"
       UserPoolId: !Ref CognitoAdminUserPool
 
   DynamoTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'backend-app-table'
+      TableName: !Sub "backend-app-table"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: PK
@@ -486,7 +681,7 @@ Resources:
   SessionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub 'backend-app-sessions'
+      TableName: !Sub "backend-app-sessions"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: PK
@@ -505,7 +700,7 @@ Resources:
 Outputs:
   HttpApiUrl:
     Description: Base URL for the HTTP API
-    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/v1'
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/v1"
   CognitoUserPoolId:
     Description: ID of the Cognito User Pool for this stack
     Value: !Ref CognitoUserPool
@@ -514,7 +709,7 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
   CognitoUserPoolDomain:
     Description: Cognito User Pool domain for this stack
-    Value: !Sub 'https://${CognitoUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+    Value: !Sub "https://${CognitoUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
   CognitoContractorUserPoolId:
     Description: ID of the Cognito Contractor User Pool for this stack
     Value: !Ref CognitoContractorUserPool
@@ -523,7 +718,7 @@ Outputs:
     Value: !Ref CognitoContractorUserPoolClient
   CognitoContractorUserPoolDomain:
     Description: Cognito Contractor User Pool domain for this stack
-    Value: !Sub 'https://${CognitoContractorUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+    Value: !Sub "https://${CognitoContractorUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
   CognitoAdminUserPoolId:
     Description: ID of the Cognito Admin User Pool for this stack
     Value: !Ref CognitoAdminUserPool
@@ -532,4 +727,4 @@ Outputs:
     Value: !Ref CognitoAdminUserPoolClient
   CognitoAdminUserPoolDomain:
     Description: Cognito Admin User Pool domain for this stack
-    Value: !Sub 'https://${CognitoAdminUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
+    Value: !Sub "https://${CognitoAdminUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"

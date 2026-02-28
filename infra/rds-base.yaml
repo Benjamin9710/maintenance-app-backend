@@ -1,11 +1,11 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: RDS PostgreSQL base infrastructure for backend-app (per-environment)
 
 Parameters:
   EnvironmentName:
     Type: String
     Description: Short environment name (e.g. dev, prod)
-    AllowedPattern: '^[a-zA-Z0-9-]+$'
+    AllowedPattern: "^[a-zA-Z0-9-]+$"
 
   DbName:
     Type: String
@@ -21,14 +21,14 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub 'backend-app-${EnvironmentName}-vpc'
+          Value: !Sub "backend-app-${EnvironmentName}-vpc"
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub 'backend-app-${EnvironmentName}-igw'
+          Value: !Sub "backend-app-${EnvironmentName}-igw"
 
   VpcGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -41,22 +41,22 @@ Resources:
     Properties:
       VpcId: !Ref BackendAppVpc
       CidrBlock: 10.20.1.0/24
-      AvailabilityZone: !Select [0, !GetAZs '']
+      AvailabilityZone: !Select [0, !GetAZs ""]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub 'backend-app-${EnvironmentName}-public-a'
+          Value: !Sub "backend-app-${EnvironmentName}-public-a"
 
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref BackendAppVpc
       CidrBlock: 10.20.2.0/24
-      AvailabilityZone: !Select [1, !GetAZs '']
+      AvailabilityZone: !Select [1, !GetAZs ""]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub 'backend-app-${EnvironmentName}-public-b'
+          Value: !Sub "backend-app-${EnvironmentName}-public-b"
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -64,7 +64,7 @@ Resources:
       VpcId: !Ref BackendAppVpc
       Tags:
         - Key: Name
-          Value: !Sub 'backend-app-${EnvironmentName}-public-rt'
+          Value: !Sub "backend-app-${EnvironmentName}-public-rt"
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -88,16 +88,16 @@ Resources:
   BackendAppDbSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: !Sub 'backend-app-${EnvironmentName}-db-subnet-group'
+      DBSubnetGroupDescription: !Sub "backend-app-${EnvironmentName}-db-subnet-group"
       SubnetIds:
         - !Ref PublicSubnetA
         - !Ref PublicSubnetB
-      DBSubnetGroupName: !Sub 'backend-app-${EnvironmentName}-db-subnet-group'
+      DBSubnetGroupName: !Sub "backend-app-${EnvironmentName}-db-subnet-group"
 
   BackendAppDbSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub 'Security group for backend-app RDS (${EnvironmentName})'
+      GroupDescription: !Sub "Security group for backend-app RDS (${EnvironmentName})"
       VpcId: !Ref BackendAppVpc
       SecurityGroupIngress:
         # Dev-only: allow PostgreSQL from anywhere. Tighten this later.
@@ -107,17 +107,17 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub 'backend-app-${EnvironmentName}-db-sg'
+          Value: !Sub "backend-app-${EnvironmentName}-db-sg"
 
   BackendAppDbInstance:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
     Properties:
-      DBInstanceIdentifier: !Sub 'backend-app-${EnvironmentName}-db'
+      DBInstanceIdentifier: !Sub "backend-app-${EnvironmentName}-db"
       Engine: postgres
       DBName: !Ref DbName
-      MasterUsername: !Sub '{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-username:SecretString}}'
-      MasterUserPassword: !Sub '{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-password:SecretString}}'
+      MasterUsername: !Sub "{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-username:SecretString}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-password:SecretString}}"
       DBInstanceClass: db.t3.micro
       AllocatedStorage: 20
       StorageType: gp2
@@ -130,21 +130,51 @@ Resources:
         - !Ref BackendAppDbSecurityGroup
       DBSubnetGroupName: !Ref BackendAppDbSubnetGroup
 
+  DbHostSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DB_HOST
+      SecretString: !GetAtt BackendAppDbInstance.Endpoint.Address
+
+  DbPortSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DB_PORT
+      SecretString: !GetAtt BackendAppDbInstance.Endpoint.Port
+
+  DbNameSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DB_NAME
+      SecretString: !Ref DbName
+
+  DbUserSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DB_USER
+      SecretString: !Sub "{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-username:SecretString}}"
+
+  DbPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: DB_PASSWORD
+      SecretString: !Sub "{{resolve:secretsmanager:backend-app-${EnvironmentName}-db-master-password:SecretString}}"
+
 Outputs:
   DbEndpointAddress:
     Description: RDS endpoint address
     Value: !GetAtt BackendAppDbInstance.Endpoint.Address
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-DbEndpointAddress'
+      Name: !Sub "backend-app-${EnvironmentName}-DbEndpointAddress"
 
   DbEndpointPort:
     Description: RDS endpoint port
     Value: !GetAtt BackendAppDbInstance.Endpoint.Port
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-DbEndpointPort'
+      Name: !Sub "backend-app-${EnvironmentName}-DbEndpointPort"
 
   DbName:
     Description: Database name
     Value: !Ref DbName
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-DbName'
+      Name: !Sub "backend-app-${EnvironmentName}-DbName"

@@ -1,5 +1,5 @@
 import { handler } from '../../src/handlers/authLogout';
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 jest.mock('../../src/db/dynamodb/sessionsRepository');
 jest.mock('../../src/utils/sessionAuth');

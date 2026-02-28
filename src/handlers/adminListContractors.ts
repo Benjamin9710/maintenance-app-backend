@@ -5,6 +5,8 @@ import { badRequest, forbidden, internalError, ok } from '../utils/responses';
 import { getAuthorizationHeader } from '../utils/apiGateway';
 import { validateEnvironmentVariables } from '../config/validation';
 import { ValidationError, AuthenticationError, AuthorizationError } from '../utils/errors';
+import { logContractorList } from '../utils/userAuditLogger';
+import { withAdminRateLimit } from '../utils/rateLimiter';
 
 // Validate environment variables at startup
 validateEnvironmentVariables();
@@ -28,15 +30,18 @@ const parsePaginationParams = (event: APIGatewayProxyEventV2) => {
   return { limit, paginationToken };
 };
 
-export const handler = async (
+const listContractorsHandler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
   try {
     const authHeader = getAuthorizationHeader(event);
-    await requireAdminSession(authHeader);
+    const session = await requireAdminSession(authHeader);
 
     const paginationOptions = parsePaginationParams(event);
     const result = await listContractors(process.env.COGNITO_CONTRACTOR_USER_POOL_ID ?? '', paginationOptions);
+
+    // Log audit event
+    logContractorList(result.contractors.length, !!(paginationOptions.limit || paginationOptions.paginationToken), session.sub, 'admin');
 
     return ok(result);
   } catch (error) {
@@ -63,3 +68,5 @@ export const handler = async (
     return internalError('Unable to list contractors');
   }
 };
+
+export const handler = withAdminRateLimit(listContractorsHandler);

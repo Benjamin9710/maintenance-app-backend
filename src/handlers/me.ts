@@ -1,4 +1,4 @@
-import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { validateSessionToken } from '../utils/sessionAuth';
 import { ok, unauthorized } from '../utils/responses';
 

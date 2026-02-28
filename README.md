@@ -120,7 +120,8 @@ Once SAM is running, you can call:
   ```bash
   curl http://127.0.0.1:3000/dynamo/health
   ```
-```
+
+````
 
 ## Environment configuration
 
@@ -150,23 +151,44 @@ These are consumed by `src/config/env.ts` and used by the Dynamo client in `src/
 
   ```bash
 docker-compose down
-```
+````
 
 - Stop and delete Postgres data volume (reset DB):
 
   ```bash
-docker-compose down -v
-```
+  docker-compose down -v
+  ```
+
+````
 
 ## Deploying to AWS (dev/prod)
 
 This repo uses a three-layer deployment model:
 
 - A **base account stack** (artifact bucket, IAM roles, Secrets Manager).
-- An **RDS base stack** (Postgres instance per environment).
+- An **RDS base stack** (Postgres instance per environment + database connection secrets).
 - The **SAM application stack** (Lambdas + HttpApi).
 
-### 1. Base account stack
+### Quick Full Setup
+
+For new environments, use the automated setup script that handles all stacks in the correct order:
+
+```bash
+aws sso login --profile Club-Sports-App-Dev-Administrator
+
+./setup-full-infrastructure.sh dev Club-Sports-App-Dev-Administrator
+````
+
+This will:
+
+1. Deploy base account infrastructure
+2. Deploy RDS infrastructure
+3. Create database connection secrets automatically
+4. Deploy the SAM application
+
+### Manual Step-by-Step Setup
+
+#### 1. Base account stack
 
 Template: `infra/base-account.yaml`
 
@@ -178,11 +200,12 @@ This stack creates:
 - CI/CD deploy role.
 - Shared Lambda execution role (`backend-app-lambda-[env]`).
 - Secrets Manager secrets for DB master username/password.
+- IAM policies for accessing database connection secrets.
 
-To deploy for `dev` (using the `Backend-App-Dev-Administrator` profile):
+To deploy for `dev`:
 
 ```bash
-aws sso login --profile Club-Sports-Backend-App-Dev-Administrator
+aws sso login --profile Club-Sports-App-Dev-Administrator
 
 ./deploy-base-stack.sh                # defaults to env=dev, dev admin profile
 ```
@@ -194,7 +217,7 @@ After this, in Secrets Manager, update the two DB master secrets for `dev`:
 
 Set their plaintext values to the desired RDS master credentials.
 
-### 2. RDS base stack
+#### 2. RDS base stack
 
 Template: `infra/rds-base.yaml`
 
@@ -204,12 +227,18 @@ This stack creates:
 
 - A VPC, public subnets, and subnet group for RDS.
 - A small Postgres instance (dev-friendly, non-HA).
+- **Database connection secrets** automatically created with RDS endpoint info:
+  - `DB_HOST` - RDS endpoint address
+  - `DB_PORT` - RDS endpoint port (5432)
+  - `DB_NAME` - Database name
+  - `DB_USER` - Database username (from master username secret)
+  - `DB_PASSWORD` - Database password (from master password secret)
 - CloudFormation exports for DB endpoint address, port, and name.
 
 To deploy for `dev`:
 
 ```bash
-aws sso login --profile Club-Sports-Backend-App-Dev-Administrator
+aws sso login --profile Club-Sports-App-Dev-Administrator
 
 ./deploy-rds-base.sh                  # defaults to env=dev, dev admin profile
 ```
@@ -220,7 +249,17 @@ Once complete, you can inspect the `backend-app-rds-base-dev` stack outputs for:
 - `DbEndpointPort`
 - `DbName`
 
-### 3. SAM application stack
+#### 3. Update RDS secrets (if needed)
+
+If you need to update the database connection secrets after RDS deployment:
+
+```bash
+./update-rds-secrets.sh dev Club-Sports-App-Dev-Administrator
+```
+
+This updates the RDS stack to ensure all database connection secrets are properly created.
+
+#### 4. SAM application stack
 
 Template: `template.yaml`
 
@@ -230,20 +269,21 @@ This stack creates:
 
 - The `HttpApi` API Gateway (driven by `openapi/api.yaml`).
 - `HealthCheckFunction`, `DbHealthFunction`, `DynamoHealthFunction` Lambdas.
+- Property management functions (AdminCreateProperty, AdminGetProperty, etc.).
 - Lambda permissions for API Gateway.
-- A DynamoDB table (`backend-app-table`) for future use.
+- A DynamoDB table (`backend-app-table`) for session storage.
+- Three Cognito User Pools (manager, contractor, admin).
 
 The template supports both local Docker-based DB/Dynamo and AWS RDS/Dynamo via parameters:
 
 - `EnvironmentName` (e.g. `local`, `dev`, `prod`).
-- `UseRds` (`true` in AWS envs, `false` locally).
 
-`deploy-sam.sh` uses `EnvironmentName=dev` and `UseRds=true` by default and reads the artifact bucket from the base stack.
+`deploy-sam.sh` uses `EnvironmentName=dev` by default and reads the artifact bucket from the base stack.
 
 To deploy the app for `dev`:
 
 ```bash
-aws sso login --profile Backend-App-Dev-Administrator
+aws sso login --profile Club-Sports-App-Dev-Administrator
 
 ./deploy-sam.sh                       # env=dev, dev admin profile
 ```
@@ -261,3 +301,15 @@ curl "https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/v1/health"
 curl "https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/v1/db/health"
 curl "https://<api-id>.execute-api.ap-southeast-2.amazonaws.com/v1/dynamo/health"
 ```
+
+### Database Connection Secrets
+
+The SAM application automatically resolves database connection from AWS Secrets Manager:
+
+- `DB_HOST` - RDS endpoint address
+- `DB_PORT` - Database port (5432)
+- `DB_NAME` - Database name
+- `DB_USER` - Database username
+- `DB_PASSWORD` - Database password
+
+These secrets are created automatically by the RDS stack and referenced in the SAM template using `{{resolve:secretsmanager:GetSecretValue:SecretString:SECRET_NAME}}`.

@@ -1,5 +1,5 @@
 import { extractCognitoClaims } from '../../src/config/auth';
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 describe('extractCognitoClaims', () => {
   it('extracts claims correctly from valid JWT authorizer', () => {

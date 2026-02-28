@@ -1,14 +1,25 @@
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2 } from "aws-lambda";
+
+interface CognitoJWTClaims {
+  sub: string;
+  email: string;
+  email_verified: boolean | string;
+  exp: string | number;
+  iat: string | number;
+  given_name: string;
+  family_name: string;
+  [key: string]: unknown; // Allow additional claims but with unknown type
+}
 
 interface JWTAuthorizer {
   jwt: {
-    claims: Record<string, any>;
+    claims: CognitoJWTClaims;
     scopes: string[];
   };
 }
 
 interface APIGatewayProxyEventV2WithAuthorizer extends APIGatewayProxyEventV2 {
-  requestContext: APIGatewayProxyEventV2['requestContext'] & {
+  requestContext: APIGatewayProxyEventV2["requestContext"] & {
     authorizer: JWTAuthorizer;
   };
 }
@@ -23,19 +34,23 @@ export interface CognitoClaims {
   family_name: string;
 }
 
-export function extractCognitoClaims(event: APIGatewayProxyEventV2): CognitoClaims | null {
+export function extractCognitoClaims(
+  event: APIGatewayProxyEventV2,
+): CognitoClaims | null {
   try {
-    const authorizer = (event as APIGatewayProxyEventV2WithAuthorizer).requestContext.authorizer;
+    const authorizer = (event as APIGatewayProxyEventV2WithAuthorizer)
+      .requestContext.authorizer;
     if (!authorizer?.jwt?.claims) {
       return null;
     }
 
-    const claims = authorizer.jwt.claims as Record<string, any>;
+    const claims = authorizer.jwt.claims;
 
     return {
       sub: claims.sub,
       email: claims.email,
-      email_verified: claims.email_verified === true || claims.email_verified === 'true',
+      email_verified:
+        claims.email_verified === true || claims.email_verified === "true",
       exp: Number(claims.exp),
       iat: Number(claims.iat),
       given_name: claims.given_name,

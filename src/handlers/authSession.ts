@@ -1,34 +1,42 @@
-import { CognitoJwtVerifier } from 'aws-jwt-verify';
-import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
-import { randomUUID } from 'crypto';
-import { createSessionForUser } from '../db/dynamodb/sessionsRepository';
-import { createSessionToken } from '../utils/sessionToken';
-import { badRequest, ok, unauthorized } from '../utils/responses';
+import { CognitoJwtVerifier } from "aws-jwt-verify";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyStructuredResultV2,
+} from "aws-lambda";
+import { createSessionForUser } from "../db/dynamodb/sessionsRepository";
+import { createSessionToken } from "../utils/sessionToken";
+import { badRequest, ok, unauthorized } from "../utils/responses";
+
+interface JwtClaims {
+  sub: string;
+  email?: string;
+  [key: string]: unknown; // Allow other claim properties
+}
 
 export const handler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
   const managerVerifier = CognitoJwtVerifier.create({
-    userPoolId: process.env.COGNITO_MANAGER_USER_POOL_ID ?? '',
-    tokenUse: 'id',
-    clientId: process.env.COGNITO_MANAGER_USER_POOL_CLIENT_ID ?? '',
+    userPoolId: process.env.COGNITO_MANAGER_USER_POOL_ID ?? "",
+    tokenUse: "id",
+    clientId: process.env.COGNITO_MANAGER_USER_POOL_CLIENT_ID ?? "",
   });
 
   const contractorVerifier = CognitoJwtVerifier.create({
-    userPoolId: process.env.COGNITO_CONTRACTOR_USER_POOL_ID ?? '',
-    tokenUse: 'id',
-    clientId: process.env.COGNITO_CONTRACTOR_USER_POOL_CLIENT_ID ?? '',
+    userPoolId: process.env.COGNITO_CONTRACTOR_USER_POOL_ID ?? "",
+    tokenUse: "id",
+    clientId: process.env.COGNITO_CONTRACTOR_USER_POOL_CLIENT_ID ?? "",
   });
 
   const adminVerifier = CognitoJwtVerifier.create({
-    userPoolId: process.env.COGNITO_ADMIN_USER_POOL_ID ?? '',
-    tokenUse: 'id',
-    clientId: process.env.COGNITO_ADMIN_USER_POOL_CLIENT_ID ?? '',
+    userPoolId: process.env.COGNITO_ADMIN_USER_POOL_ID ?? "",
+    tokenUse: "id",
+    clientId: process.env.COGNITO_ADMIN_USER_POOL_CLIENT_ID ?? "",
   });
 
   try {
     if (!event.body) {
-      return badRequest('Missing request body');
+      return badRequest("Missing request body");
     }
 
     let parsedBody: unknown;
@@ -36,46 +44,58 @@ export const handler = async (
     try {
       parsedBody = JSON.parse(event.body);
     } catch {
-      return badRequest('Invalid JSON body');
+      return badRequest("Invalid JSON body");
     }
 
     const { idToken } = parsedBody as { idToken?: string };
 
     if (!idToken) {
-      return badRequest('idToken is required');
+      return badRequest("idToken is required");
     }
 
-    let claims: any;
-    let persona: 'manager' | 'contractor' | 'admin';
+    let claims: JwtClaims;
+    let persona: "manager" | "contractor" | "admin";
 
     try {
       claims = await managerVerifier.verify(idToken);
-      persona = 'manager';
-    } catch (managerError) {
+      persona = "manager";
+    } catch {
       try {
         claims = await contractorVerifier.verify(idToken);
-        persona = 'contractor';
-      } catch (contractorError) {
+        persona = "contractor";
+      } catch {
         try {
           claims = await adminVerifier.verify(idToken);
-          persona = 'admin';
-        } catch (adminError) {
-          return unauthorized('Unable to create session from ID token');
+          persona = "admin";
+        } catch {
+          return unauthorized("Unable to create session from ID token");
         }
       }
     }
-    const sub = claims.sub as string | undefined;
-    const email = (claims as { email?: string }).email ?? null;
+    const sub = claims.sub;
+    const email = claims.email ?? null;
 
     if (!sub) {
-      return unauthorized('Invalid ID token: missing sub');
+      return unauthorized("Invalid ID token: missing sub");
     }
 
-    const { token: sessionToken, sessionId, tokenHash, expiresAt } = createSessionToken(sub);
+    const {
+      token: sessionToken,
+      sessionId,
+      tokenHash,
+      expiresAt,
+    } = createSessionToken(sub);
 
     const expiresAtSeconds = Math.floor(new Date(expiresAt).getTime() / 1000);
 
-    await createSessionForUser(sub, sessionId, tokenHash, expiresAtSeconds, email, persona);
+    await createSessionForUser(
+      sub,
+      sessionId,
+      tokenHash,
+      expiresAtSeconds,
+      email,
+      persona,
+    );
 
     return ok({
       sessionToken,
@@ -83,13 +103,13 @@ export const handler = async (
       persona,
       user: {
         sub,
-        email: (claims as { email?: string }).email ?? null,
+        email: claims.email ?? null,
         isProfileComplete: false, // No user DB yet
       },
     });
   } catch (error) {
-    console.error('Error creating API session', error);
+    console.error("Error creating API session", error);
 
-    return unauthorized('Unable to create session from ID token');
+    return unauthorized("Unable to create session from ID token");
   }
 };

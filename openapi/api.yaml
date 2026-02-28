@@ -15,7 +15,7 @@ paths:
       operationId: healthCheck
       description: Basic health check endpoint
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -27,7 +27,7 @@ paths:
                     example: healthy
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${HealthCheckFunction.Arn}/invocations
@@ -38,7 +38,7 @@ paths:
       operationId: dbHealth
       description: Check database connectivity
       responses:
-        '200':
+        "200":
           description: Database connection successful
           content:
             application/json:
@@ -48,11 +48,11 @@ paths:
                   status:
                     type: string
                     example: connected
-        '500':
+        "500":
           description: Database connection failed
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DbHealthFunction.Arn}/invocations
@@ -63,7 +63,7 @@ paths:
       operationId: dynamoHealth
       description: Check DynamoDB connectivity
       responses:
-        '200':
+        "200":
           description: DynamoDB connection successful
           content:
             application/json:
@@ -73,11 +73,11 @@ paths:
                   status:
                     type: string
                     example: connected
-        '500':
+        "500":
           description: DynamoDB connection failed
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DynamoHealthFunction.Arn}/invocations
@@ -90,7 +90,7 @@ paths:
         - bearerAuth: []
       description: Retrieve information about the currently authenticated user
       responses:
-        '200':
+        "200":
           description: User information
           content:
             application/json:
@@ -108,13 +108,13 @@ paths:
                     type: string
                     enum: [manager, contractor, admin]
                     description: User persona/role
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MeFunction.Arn}/invocations
@@ -142,7 +142,7 @@ paths:
                 - token
                 - persona
       responses:
-        '200':
+        "200":
           description: Session created
           content:
             application/json:
@@ -155,13 +155,13 @@ paths:
                   expiresAt:
                     type: integer
                     description: Token expiration timestamp
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthSessionFunction.Arn}/invocations
@@ -174,13 +174,13 @@ paths:
         - bearerAuth: []
       description: Invalidate the current session
       responses:
-        '200':
+        "200":
           description: Session invalidated
-        '401':
+        "401":
           description: Unauthorized
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthLogoutFunction.Arn}/invocations
@@ -207,7 +207,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Paginated list of managers
           content:
             application/json:
@@ -255,13 +255,13 @@ paths:
                   hasMore:
                     type: boolean
                     description: Whether more pages are available
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminListManagersFunction.Arn}/invocations
@@ -297,7 +297,7 @@ paths:
                 - familyName
                 - phoneNumber
       responses:
-        '200':
+        "200":
           description: Manager created
           content:
             application/json:
@@ -333,15 +333,15 @@ paths:
                   lastModifiedAt:
                     type: string
                     format: date-time
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreateManagerFunction.Arn}/invocations
@@ -368,7 +368,7 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Paginated list of contractors
           content:
             application/json:
@@ -416,13 +416,13 @@ paths:
                   hasMore:
                     type: boolean
                     description: Whether more pages are available
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminListContractorsFunction.Arn}/invocations
@@ -458,7 +458,7 @@ paths:
                 - familyName
                 - phoneNumber
       responses:
-        '200':
+        "200":
           description: Contractor created
           content:
             application/json:
@@ -494,18 +494,625 @@ paths:
                   lastModifiedAt:
                     type: string
                     format: date-time
-        '400':
+        "400":
           description: Bad request
-        '401':
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden
       x-amazon-apigateway-integration:
         type: aws_proxy
-        payloadFormatVersion: '2.0'
+        payloadFormatVersion: "2.0"
         httpMethod: POST
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreateContractorFunction.Arn}/invocations
+
+  /admin/managers/{managerSub}/properties:
+    get:
+      summary: List properties for a manager (admin only)
+      operationId: listManagerProperties
+      security:
+        - bearerAuth: []
+      description: Retrieve list of properties for a specific manager
+      parameters:
+        - name: managerSub
+          in: path
+          required: true
+          description: Manager Cognito sub identifier
+          schema:
+            type: string
+        - name: includeArchived
+          in: query
+          description: Include archived properties in results
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: List of properties for the manager
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  properties:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Property ID
+                        owner_manager_sub:
+                          type: string
+                          description: Manager sub who owns this property
+                        name:
+                          type: string
+                          description: Property name
+                        address_line1:
+                          type: string
+                          description: Property address line 1
+                        address_line2:
+                          type: string
+                          nullable: true
+                          description: Property address line 2
+                        suburb:
+                          type: string
+                          description: Property suburb
+                        state:
+                          type: string
+                          description: Property state
+                        postcode:
+                          type: string
+                          description: Property postcode
+                        country:
+                          type: string
+                          description: Property country
+                        timezone:
+                          type: string
+                          nullable: true
+                          description: Property timezone
+                        created_at:
+                          type: string
+                          format: date-time
+                          description: Creation timestamp
+                        updated_at:
+                          type: string
+                          format: date-time
+                          description: Last update timestamp
+                        archived_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                          description: Archive timestamp (null if not archived)
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: "2.0"
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminListManagerPropertiesFunction.Arn}/invocations
+
+    post:
+      summary: Create property for a manager (admin only)
+      operationId: createPropertyForManager
+      security:
+        - bearerAuth: []
+      description: Create a new property for a specific manager
+      parameters:
+        - name: managerSub
+          in: path
+          required: true
+          description: Manager Cognito sub identifier who will own this property
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Property name
+                address_line1:
+                  type: string
+                  description: Property address line 1
+                address_line2:
+                  type: string
+                  nullable: true
+                  description: Property address line 2
+                suburb:
+                  type: string
+                  description: Property suburb
+                state:
+                  type: string
+                  description: Property state
+                postcode:
+                  type: string
+                  description: Property postcode
+                country:
+                  type: string
+                  description: Property country
+                timezone:
+                  type: string
+                  nullable: true
+                  description: Property timezone
+              required:
+                - name
+                - address_line1
+                - suburb
+                - state
+                - postcode
+                - country
+      responses:
+        "200":
+          description: Property created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Property ID
+                  owner_manager_sub:
+                    type: string
+                    description: Manager sub who owns this property
+                  name:
+                    type: string
+                    description: Property name
+                  address_line1:
+                    type: string
+                    description: Property address line 1
+                  address_line2:
+                    type: string
+                    nullable: true
+                    description: Property address line 2
+                  suburb:
+                    type: string
+                    description: Property suburb
+                  state:
+                    type: string
+                    description: Property state
+                  postcode:
+                    type: string
+                    description: Property postcode
+                  country:
+                    type: string
+                    description: Property country
+                  timezone:
+                    type: string
+                    nullable: true
+                    description: Property timezone
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp
+                  updated_at:
+                    type: string
+                    format: date-time
+                    description: Last update timestamp
+                  archived_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: Archive timestamp (null if not archived)
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: "2.0"
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreatePropertyFunction.Arn}/invocations
+
+  /admin/properties:
+    post:
+      summary: Create property (admin only)
+      operationId: createProperty
+      security:
+        - bearerAuth: []
+      description: Create a new property for a manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                owner_manager_sub:
+                  type: string
+                  description: Manager sub who will own this property
+                name:
+                  type: string
+                  description: Property name
+                address_line1:
+                  type: string
+                  description: Property address line 1
+                address_line2:
+                  type: string
+                  nullable: true
+                  description: Property address line 2
+                suburb:
+                  type: string
+                  description: Property suburb
+                state:
+                  type: string
+                  description: Property state
+                postcode:
+                  type: string
+                  description: Property postcode
+                country:
+                  type: string
+                  description: Property country
+                timezone:
+                  type: string
+                  nullable: true
+                  description: Property timezone
+              required:
+                - owner_manager_sub
+                - name
+                - address_line1
+                - suburb
+                - state
+                - postcode
+                - country
+      responses:
+        "200":
+          description: Property created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Property ID
+                  owner_manager_sub:
+                    type: string
+                    description: Manager sub who owns this property
+                  name:
+                    type: string
+                    description: Property name
+                  address_line1:
+                    type: string
+                    description: Property address line 1
+                  address_line2:
+                    type: string
+                    nullable: true
+                    description: Property address line 2
+                  suburb:
+                    type: string
+                    description: Property suburb
+                  state:
+                    type: string
+                    description: Property state
+                  postcode:
+                    type: string
+                    description: Property postcode
+                  country:
+                    type: string
+                    description: Property country
+                  timezone:
+                    type: string
+                    nullable: true
+                    description: Property timezone
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp
+                  updated_at:
+                    type: string
+                    format: date-time
+                    description: Last update timestamp
+                  archived_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: Archive timestamp (null if not archived)
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: "2.0"
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminCreatePropertyFunction.Arn}/invocations
+
+  /admin/properties/{propertyId}:
+    get:
+      summary: Get property by ID (admin only)
+      operationId: getProperty
+      security:
+        - bearerAuth: []
+      description: Retrieve a specific property by ID
+      parameters:
+        - name: propertyId
+          in: path
+          required: true
+          description: Property ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Property details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Property ID
+                  ownerManagerSub:
+                    type: string
+                    description: Manager sub who owns this property
+                  name:
+                    type: string
+                    description: Property name
+                  addressLine1:
+                    type: string
+                    description: Property address line 1
+                  addressLine2:
+                    type: string
+                    nullable: true
+                    description: Property address line 2
+                  suburb:
+                    type: string
+                    description: Property suburb
+                  state:
+                    type: string
+                    description: Property state
+                  postcode:
+                    type: string
+                    description: Property postcode
+                  country:
+                    type: string
+                    description: Property country
+                  timezone:
+                    type: string
+                    nullable: true
+                    description: Property timezone
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    description: Last update timestamp
+                  archivedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: Archive timestamp (null if not archived)
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Property not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: "2.0"
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminGetPropertyFunction.Arn}/invocations
+
+    patch:
+      summary: Update property (admin only)
+      operationId: updateProperty
+      security:
+        - bearerAuth: []
+      description: Update an existing property
+      parameters:
+        - name: propertyId
+          in: path
+          required: true
+          description: Property ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Property name
+                address_line1:
+                  type: string
+                  description: Property address line 1
+                address_line2:
+                  type: string
+                  nullable: true
+                  description: Property address line 2
+                suburb:
+                  type: string
+                  description: Property suburb
+                state:
+                  type: string
+                  description: Property state
+                postcode:
+                  type: string
+                  description: Property postcode
+                country:
+                  type: string
+                  description: Property country
+                timezone:
+                  type: string
+                  nullable: true
+                  description: Property timezone
+              required: []
+      responses:
+        "200":
+          description: Property updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Property ID
+                  ownerManagerSub:
+                    type: string
+                    description: Manager sub who owns this property
+                  name:
+                    type: string
+                    description: Property name
+                  addressLine1:
+                    type: string
+                    description: Property address line 1
+                  addressLine2:
+                    type: string
+                    nullable: true
+                    description: Property address line 2
+                  suburb:
+                    type: string
+                    description: Property suburb
+                  state:
+                    type: string
+                    description: Property state
+                  postcode:
+                    type: string
+                    description: Property postcode
+                  country:
+                    type: string
+                    description: Property country
+                  timezone:
+                    type: string
+                    nullable: true
+                    description: Property timezone
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    description: Last update timestamp
+                  archivedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: Archive timestamp (null if not archived)
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Property not found
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: "2.0"
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminUpdatePropertyFunction.Arn}/invocations
+
+  /admin/properties/{propertyId}/archive:
+    post:
+      summary: Archive property (admin only)
+      operationId: archiveProperty
+      security:
+        - bearerAuth: []
+      description: Archive an existing property
+      parameters:
+        - name: propertyId
+          in: path
+          required: true
+          description: Property ID
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Property archived successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Property ID
+                  ownerManagerSub:
+                    type: string
+                    description: Manager sub who owns this property
+                  name:
+                    type: string
+                    description: Property name
+                  addressLine1:
+                    type: string
+                    description: Property address line 1
+                  addressLine2:
+                    type: string
+                    nullable: true
+                    description: Property address line 2
+                  suburb:
+                    type: string
+                    description: Property suburb
+                  state:
+                    type: string
+                    description: Property state
+                  postcode:
+                    type: string
+                    description: Property postcode
+                  country:
+                    type: string
+                    description: Property country
+                  timezone:
+                    type: string
+                    nullable: true
+                    description: Property timezone
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    description: Last update timestamp
+                  archivedAt:
+                    type: string
+                    format: date-time
+                    description: Archive timestamp
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Property not found
+        "409":
+          description: Property already archived
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        payloadFormatVersion: "2.0"
+        httpMethod: POST
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AdminArchivePropertyFunction.Arn}/invocations
 
 components:
   securitySchemes:

@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # Backend architecture & boundaries
 
 ## Layering

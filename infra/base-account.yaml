@@ -1,25 +1,25 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Base account-level infrastructure for backend-app (artifact bucket + CI deploy role)
 
 Parameters:
   EnvironmentName:
     Type: String
     Description: Short environment name (e.g. dev, prod)
-    AllowedPattern: '^[a-zA-Z0-9-]+$'
+    AllowedPattern: "^[a-zA-Z0-9-]+$"
 
   ArtifactBucketName:
     Type: String
     Description: Optional explicit name for the SAM artifact bucket
-    Default: ''
+    Default: ""
 
   DeployRoleName:
     Type: String
     Description: IAM role name for CI/CD deployments
-    Default: ''
+    Default: ""
 
 Conditions:
-  UseGeneratedBucketName: !Equals [!Ref ArtifactBucketName, '']
-  UseGeneratedDeployRoleName: !Equals [!Ref DeployRoleName, '']
+  UseGeneratedBucketName: !Equals [!Ref ArtifactBucketName, ""]
+  UseGeneratedDeployRoleName: !Equals [!Ref DeployRoleName, ""]
 
 Resources:
   ArtifactBucket:
@@ -27,7 +27,7 @@ Resources:
     Properties:
       BucketName: !If
         - UseGeneratedBucketName
-        - !Sub 'backend-app-artifacts-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}'
+        - !Sub "backend-app-artifacts-${EnvironmentName}-${AWS::AccountId}-${AWS::Region}"
         - !Ref ArtifactBucketName
       VersioningConfiguration:
         Status: Enabled
@@ -46,14 +46,14 @@ Resources:
     Properties:
       RoleName: !If
         - UseGeneratedDeployRoleName
-        - !Sub 'backend-app-deploy-${EnvironmentName}'
+        - !Sub "backend-app-deploy-${EnvironmentName}"
         - !Ref DeployRoleName
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action:
               - sts:AssumeRole
       Path: "/service/"
@@ -61,9 +61,9 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub 'backend-app-lambda-${EnvironmentName}'
+      RoleName: !Sub "backend-app-lambda-${EnvironmentName}"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -74,9 +74,9 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: !Sub 'backend-app-lambda-dynamo-${EnvironmentName}'
+        - PolicyName: !Sub "backend-app-lambda-dynamo-${EnvironmentName}"
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -87,9 +87,9 @@ Resources:
                   - dynamodb:Query
                   - dynamodb:Scan
                 Resource: "*"
-        - PolicyName: !Sub 'backend-app-lambda-cognito-${EnvironmentName}'
+        - PolicyName: !Sub "backend-app-lambda-cognito-${EnvironmentName}"
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
@@ -102,26 +102,40 @@ Resources:
                   - cognito-idp:AdminEnableUser
                   - cognito-idp:AdminDisableUser
                   - cognito-idp:DescribeUserPool
-                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*'
+                Resource: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*"
+        - PolicyName: !Sub "backend-app-lambda-secrets-${EnvironmentName}"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_HOST*"
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_PORT*"
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_NAME*"
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_USER*"
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_PASSWORD*"
 
   DbMasterUsernameSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub 'backend-app-${EnvironmentName}-db-master-username'
+      Name: !Sub "backend-app-${EnvironmentName}-db-master-username"
 
   DbMasterPasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub 'backend-app-${EnvironmentName}-db-master-password'
+      Name: !Sub "backend-app-${EnvironmentName}-db-master-password"
 
   DbCredentialsAccessPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: !Sub 'backend-app-db-credentials-access-${EnvironmentName}'
+      ManagedPolicyName: !Sub "backend-app-db-credentials-access-${EnvironmentName}"
       Roles:
         - !Ref DeployRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -130,16 +144,21 @@ Resources:
             Resource:
               - !Ref DbMasterUsernameSecret
               - !Ref DbMasterPasswordSecret
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_HOST*"
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_PORT*"
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_NAME*"
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_USER*"
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:DB_PASSWORD*"
 
   DeployRolePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: !Sub 'backend-app-deploy-${EnvironmentName}'
+      ManagedPolicyName: !Sub "backend-app-deploy-${EnvironmentName}"
       Description: CI/CD deployment policy for backend-app SAM stacks
       Roles:
         - !Ref DeployRole
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           # Allow managing CloudFormation stacks for this app in this account/region
           - Effect: Allow
@@ -164,7 +183,7 @@ Resources:
               - s3:ListBucket
             Resource:
               - !GetAtt ArtifactBucket.Arn
-              - !Sub '${ArtifactBucket.Arn}/*'
+              - !Sub "${ArtifactBucket.Arn}/*"
 
           # Allow managing Lambda functions for this app only (scoped by function name prefix)
           - Effect: Allow
@@ -177,7 +196,7 @@ Resources:
               - lambda:ListFunctions
               - lambda:TagResource
               - lambda:UntagResource
-            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:backend-app-*'
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:backend-app-*"
 
           # Allow managing CloudWatch Logs and API Gateway resources (can be narrowed later)
           - Effect: Allow
@@ -200,29 +219,29 @@ Resources:
           - Effect: Allow
             Action:
               - iam:PassRole
-            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/backend-app-lambda-*'
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/backend-app-lambda-*"
 
 Outputs:
   ArtifactBucketName:
     Description: Name of the S3 bucket used for SAM artifacts
     Value: !Ref ArtifactBucket
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-ArtifactBucketName'
+      Name: !Sub "backend-app-${EnvironmentName}-ArtifactBucketName"
 
   ArtifactBucketArn:
     Description: ARN of the S3 bucket used for SAM artifacts
     Value: !GetAtt ArtifactBucket.Arn
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-ArtifactBucketArn'
+      Name: !Sub "backend-app-${EnvironmentName}-ArtifactBucketArn"
 
   DeployRoleArn:
     Description: ARN of the IAM role used by CI/CD for deployments
     Value: !GetAtt DeployRole.Arn
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-DeployRoleArn'
+      Name: !Sub "backend-app-${EnvironmentName}-DeployRoleArn"
 
   LambdaExecutionRoleArn:
     Description: ARN of the IAM role used by Lambda functions
     Value: !GetAtt LambdaExecutionRole.Arn
     Export:
-      Name: !Sub 'backend-app-${EnvironmentName}-LambdaExecutionRoleArn'
+      Name: !Sub "backend-app-${EnvironmentName}-LambdaExecutionRoleArn"

@@ -21,3 +21,4 @@
 - Do not add new dependencies unless necessary.
 - Never hardcode secrets; use environment variables and `src/config/env.ts`.
 - When changing an HTTP contract, update `openapi/api.yaml` and tests.
+- When adding new guidance files, follow anti-duplication principles in `.windsurf/rules/50-organization-and-anti-duplication.md`

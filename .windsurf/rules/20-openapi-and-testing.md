@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # OpenAPI & testing expectations
 
 ## OpenAPI alignment
@@ -15,6 +19,7 @@
 - Prefer deterministic unit tests:
   - mock DB calls and AWS SDK clients
   - avoid requiring real AWS resources or a real DB for unit tests
+- Test linting exceptions are defined in `40-test-linting-exceptions.md`
 
 ## Typical “must add tests” triggers
 

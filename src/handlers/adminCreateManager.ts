@@ -6,16 +6,18 @@ import { getAuthorizationHeader } from '../utils/apiGateway';
 import { validateCreateManagerRequest } from '../utils/validation';
 import { validateEnvironmentVariables } from '../config/validation';
 import { ValidationError, AuthenticationError, AuthorizationError, ConflictError, ExternalServiceError } from '../utils/errors';
+import { logManagerCreated } from '../utils/userAuditLogger';
+import { withAdminRateLimit } from '../utils/rateLimiter';
 
 // Validate environment variables at startup
 validateEnvironmentVariables();
 
-export const handler = async (
+const createManagerHandler = async (
   event: APIGatewayProxyEventV2,
 ): Promise<APIGatewayProxyStructuredResultV2> => {
   try {
     const authHeader = getAuthorizationHeader(event);
-    await requireAdminSession(authHeader);
+    const session = await requireAdminSession(authHeader);
 
     if (!event.body) {
       return badRequest('Missing request body');
@@ -31,6 +33,9 @@ export const handler = async (
     const body = validateCreateManagerRequest(parsedBody);
 
     const manager = await createManager(process.env.COGNITO_MANAGER_USER_POOL_ID ?? '', body);
+
+    // Log audit event
+    logManagerCreated(manager, session.sub, 'admin');
 
     return ok(manager);
   } catch (error) {
@@ -65,3 +70,5 @@ export const handler = async (
     return internalError('Unable to create manager');
   }
 };
+
+export const handler = withAdminRateLimit(createManagerHandler);

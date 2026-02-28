@@ -1,7 +1,15 @@
 {
-    "cSpell.words": [
-        "esbuild",
-        "tsparser",
-        "userpool"
-    ]
+  "cSpell.words": [
+    "esbuild",
+    "ILIKE",
+    "Kolkata",
+    "plpgsql",
+    "psql",
+    "Sublocation",
+    "Testtown",
+    "Testville",
+    "tsparser",
+    "userpool"
+  ],
+  "editor.formatOnSave": true
 }

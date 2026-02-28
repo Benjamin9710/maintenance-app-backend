@@ -1,5 +1,5 @@
 import { handler } from '../../src/handlers/authSession';
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 jest.mock('aws-jwt-verify', () => ({
   CognitoJwtVerifier: {

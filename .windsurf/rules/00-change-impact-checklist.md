@@ -1,3 +1,8 @@
+---
+trigger: model_decision
+description: Only relevant when making changes. Model can activate when modifications are detected.
+---
+
 # Change Impact Checklist
 
 Use this checklist whenever making changes.

@@ -1,5 +1,5 @@
 import { handler } from '../../src/handlers/me';
-import { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 
 jest.mock('../../src/utils/sessionAuth');
 

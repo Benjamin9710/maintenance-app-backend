@@ -1,6 +1,6 @@
-import { Pool, type QueryResultRow } from 'pg';
-import { dbConfig } from '../../config/env';
-import caBundle from '../../certs/ap-southeast-2-bundle.pem';
+import { Pool, type QueryResultRow } from "pg";
+import { dbConfig } from "../../config/env";
+import caBundle from "../../certs/ap-southeast-2-bundle.pem";
 
 let pool: Pool | undefined;
 
@@ -10,7 +10,7 @@ const getSslConfig = () => {
   }
 
   const rejectUnauthorizedEnv = process.env.DB_SSL_REJECT_UNAUTHORIZED;
-  if (rejectUnauthorizedEnv === 'false') {
+  if (rejectUnauthorizedEnv === "false") {
     return { rejectUnauthorized: false };
   }
 
@@ -35,6 +35,14 @@ const getPool = (): Pool => {
   return pool;
 };
 
+// Add cleanup function for test teardown
+export const closePool = async (): Promise<void> => {
+  if (pool) {
+    await pool.end();
+    pool = undefined;
+  }
+};
+
 export const query = async <T extends QueryResultRow = QueryResultRow>(
   queryText: string,
   params?: unknown[],
@@ -42,6 +50,8 @@ export const query = async <T extends QueryResultRow = QueryResultRow>(
   const client = await getPool().connect();
 
   try {
+    // Set search path to include base schema
+    await client.query("SET search_path TO base,public");
     const result = await client.query<T>(queryText, params);
     return result.rows;
   } finally {

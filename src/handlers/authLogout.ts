@@ -1,7 +1,7 @@
 import { markSessionLoggedOut } from '../db/dynamodb/sessionsRepository';
 import { internalError, ok, unauthorized } from '../utils/responses';
 import { validateSessionToken } from '../utils/sessionAuth';
-import { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 
 const getAuthorizationHeader = (event: APIGatewayProxyEventV2): string | null => {
   const headers = event.headers ?? {};
