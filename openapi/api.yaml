@@ -543,16 +543,16 @@ paths:
                         id:
                           type: string
                           description: Property ID
-                        owner_manager_sub:
+                        ownerManagerSub:
                           type: string
                           description: Manager sub who owns this property
                         name:
                           type: string
                           description: Property name
-                        address_line1:
+                        addressLine1:
                           type: string
                           description: Property address line 1
-                        address_line2:
+                        addressLine2:
                           type: string
                           nullable: true
                           description: Property address line 2
@@ -572,15 +572,15 @@ paths:
                           type: string
                           nullable: true
                           description: Property timezone
-                        created_at:
+                        createdAt:
                           type: string
                           format: date-time
                           description: Creation timestamp
-                        updated_at:
+                        updatedAt:
                           type: string
                           format: date-time
                           description: Last update timestamp
-                        archived_at:
+                        archivedAt:
                           type: string
                           format: date-time
                           nullable: true

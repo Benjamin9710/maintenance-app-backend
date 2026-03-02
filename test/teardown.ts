@@ -1,10 +1,13 @@
 export default async function globalTeardown() {
   try {
+    // Clean up rate limiter intervals to prevent hanging
+    const { cleanupRateLimiters } = await import("../src/utils/rateLimiter");
+    cleanupRateLimiters();
+
     // Close the database pool to prevent hanging connections
     const { closePool } = await import("../src/db/postgres/client");
     await closePool();
-  } catch (error) {
-    // Ignore errors during teardown (e.g., certificate import issues)
-    console.warn("Warning: Error during global teardown:", error);
+  } catch {
+    // Silently ignore all errors to prevent hanging
   }
 }

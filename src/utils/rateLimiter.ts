@@ -10,21 +10,40 @@ interface RateLimitEntry {
   firstRequest: number;
 }
 
+interface RateLimitOptions {
+  skipSuccessfulRequests?: boolean;
+  skipFailedRequests?: boolean;
+}
+
 /**
  * In-memory rate limiter for API endpoints
  * In production, this should be replaced with a distributed cache like Redis
  */
-class MemoryRateLimiter {
+export class MemoryRateLimiter {
   private store = new Map<string, RateLimitEntry>();
   private readonly windowMs: number;
   private readonly maxRequests: number;
+  private cleanupInterval: NodeJS.Timeout | undefined;
 
   constructor(windowMs: number = 60000, maxRequests: number = 100) {
     this.windowMs = windowMs;
     this.maxRequests = maxRequests;
 
     // Clean up expired entries every 5 minutes
-    setInterval(() => this.cleanup(), 5 * 60 * 1000);
+    // Only set up interval if not in test environment with fake timers
+    if (typeof jest === "undefined") {
+      this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+    }
+  }
+
+  /**
+   * Clean up the rate limiter interval
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
   }
 
   /**
@@ -72,14 +91,36 @@ class MemoryRateLimiter {
   }
 
   /**
+   * Atomically decrement count for failed request handling
+   */
+  decrementCount(key: string): boolean {
+    try {
+      const entry = this.store.get(key);
+      if (!entry || entry.count <= 0) {
+        return false; // Cannot decrement or entry doesn't exist
+      }
+
+      entry.count--;
+      return true;
+    } catch (error) {
+      console.error("Error decrementing rate limit count:", error);
+      return false;
+    }
+  }
+
+  /**
    * Clean up expired entries
    */
   private cleanup(): void {
-    const now = Date.now();
-    for (const [key, entry] of this.store.entries()) {
-      if (now > entry.resetTime) {
-        this.store.delete(key);
+    try {
+      const now = Date.now();
+      for (const [key, entry] of this.store.entries()) {
+        if (now > entry.resetTime) {
+          this.store.delete(key);
+        }
       }
+    } catch (error) {
+      console.error("Error during rate limiter cleanup:", error);
     }
   }
 
@@ -112,6 +153,43 @@ export const adminRateLimiter = new MemoryRateLimiter(60000, 50); // 50 requests
 export const generalRateLimiter = new MemoryRateLimiter(60000, 100); // 100 requests per minute for general endpoints
 
 /**
+ * Initialize rate limiters (call during application startup)
+ */
+export const initializeRateLimiters = (): void => {
+  // Rate limiters are already initialized on module import
+  // This function exists for explicit initialization if needed
+  console.log("Rate limiters initialized");
+};
+
+/**
+ * Clean up rate limiter intervals (for test teardown and graceful shutdown)
+ */
+export const cleanupRateLimiters = (): void => {
+  adminRateLimiter.destroy();
+  generalRateLimiter.destroy();
+  console.log("Rate limiters cleaned up");
+};
+
+/**
+ * Graceful shutdown handler for production environments
+ */
+export const setupGracefulShutdown = (): void => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction) {
+    // Setup graceful shutdown handlers
+    const shutdown = (signal: string) => {
+      console.log(`Received ${signal}, cleaning up rate limiters...`);
+      cleanupRateLimiters();
+      process.exit(0);
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+  }
+};
+
+/**
  * Extracts client identifier from request
  */
 export const getClientKey = (event: APIGatewayProxyEventV2): string => {
@@ -127,12 +205,19 @@ export const getClientKey = (event: APIGatewayProxyEventV2): string => {
     event.headers?.authorization || event.headers?.Authorization;
   if (authHeader) {
     // In a real implementation, you'd decode the JWT to get the sub
-    // For now, use a hash of the auth header
-    return `auth:${Buffer.from(authHeader).toString("base64").slice(0, 16)}`;
+    // For now, use a simple hash of the auth header to avoid exposing raw tokens
+    // Using a simple hash function for consistency
+    let hash = 0;
+    for (let i = 0; i < authHeader.length; i++) {
+      const char = authHeader.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return `auth:${Math.abs(hash).toString(16)}`;
   }
 
-  // Ultimate fallback
-  return `unknown:${Date.now()}`;
+  // Ultimate fallback - use timestamp to prevent collisions
+  return `unknown:${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
 /**
@@ -140,10 +225,7 @@ export const getClientKey = (event: APIGatewayProxyEventV2): string => {
  */
 export const withRateLimit = (
   rateLimiter: MemoryRateLimiter,
-  options: {
-    skipSuccessfulRequests?: boolean;
-    skipFailedRequests?: boolean;
-  } = {},
+  options: RateLimitOptions = {},
 ) => {
   return (
     handler: (
@@ -182,14 +264,16 @@ export const withRateLimit = (
           response.headers = headers;
         }
 
+        // For successful requests, we might want to not count them against the rate limit
+        if (options.skipSuccessfulRequests) {
+          rateLimiter.decrementCount(clientKey);
+        }
+
         return response;
       } catch (error) {
         // For failed requests, we might want to not count them against the rate limit
         if (options.skipFailedRequests) {
-          const entry = rateLimiter["store"].get(clientKey);
-          if (entry) {
-            entry.count--;
-          }
+          rateLimiter.decrementCount(clientKey);
         }
         throw error;
       }

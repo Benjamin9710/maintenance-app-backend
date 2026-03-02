@@ -1,6 +1,7 @@
 # Build residue
 .aws-sam
 dist
+.DS_Store
 
 # Dependencies
 node_modules

@@ -1,6 +1,13 @@
 import { Pool, type QueryResultRow } from "pg";
 import { dbConfig } from "../../config/env";
-import caBundle from "../../certs/ap-southeast-2-bundle.pem";
+
+// Dynamic import to avoid issues in test environment
+let caBundle: string | undefined;
+try {
+  caBundle = require("../../certs/ap-southeast-2-bundle.pem");
+} catch {
+  // Certificate not available, will use rejectUnauthorized: false in test env
+}
 
 let pool: Pool | undefined;
 
@@ -14,7 +21,24 @@ const getSslConfig = () => {
     return { rejectUnauthorized: false };
   }
 
-  return { ca: caBundle };
+  // Only allow insecure fallback in test environments
+  const isTestEnvironment =
+    process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
+
+  // Use certificate if available
+  if (caBundle) {
+    return { ca: caBundle };
+  }
+
+  // In test environment, allow insecure fallback. In production, this will fail.
+  if (isTestEnvironment) {
+    return { rejectUnauthorized: false };
+  }
+
+  // In production without certificate, throw an error to prevent insecure connections
+  throw new Error(
+    "SSL certificate not available and insecure connections not allowed in production",
+  );
 };
 
 const getPool = (): Pool => {

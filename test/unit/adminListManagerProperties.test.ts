@@ -1,5 +1,8 @@
 import { handler } from "../../src/handlers/adminListManagerProperties";
-import type { APIGatewayProxyEventV2 } from "aws-lambda";
+import type {
+  APIGatewayProxyEventV2,
+  APIGatewayProxyStructuredResultV2,
+} from "aws-lambda";
 import { listPropertiesByOwner } from "../../src/db/postgres/propertiesRepository";
 import type { Property } from "../../src/db/postgres/propertiesRepository";
 import { requireAdminSession } from "../../src/utils/sessionAuth";
@@ -15,6 +18,16 @@ jest.mock("../../src/utils/sessionAuth");
 jest.mock("../../src/utils/apiGateway");
 jest.mock("../../src/db/postgres/client", () => ({
   query: jest.fn(),
+}));
+
+// Mock the rate limiter to prevent interval issues
+jest.mock("../../src/utils/rateLimiter", () => ({
+  withAdminRateLimit: (
+    handler: (
+      event: APIGatewayProxyEventV2,
+    ) => Promise<APIGatewayProxyStructuredResultV2>,
+  ) => handler,
+  cleanupRateLimiters: jest.fn(),
 }));
 
 const mockListPropertiesByOwner = listPropertiesByOwner as jest.MockedFunction<
@@ -56,16 +69,19 @@ describe("adminListManagerProperties", () => {
     isBase64Encoded: false,
   };
 
+  // Mock property data matching database schema (snake_case)
   const mockProperties = [
     {
       id: "property-1",
       owner_manager_sub: "test-manager-sub",
       name: "Property 1",
       address_line1: "123 Test St",
+      address_line2: undefined,
       suburb: "Testville",
       state: "TS",
       postcode: "12345",
       country: "AU",
+      timezone: undefined,
       created_at: new Date("2024-01-01T00:00:00.000Z"),
       updated_at: new Date("2024-01-01T00:00:00.000Z"),
       archived_at: undefined,
@@ -75,22 +91,49 @@ describe("adminListManagerProperties", () => {
       owner_manager_sub: "test-manager-sub",
       name: "Property 2",
       address_line1: "456 Test Ave",
+      address_line2: "Apt 2B",
       suburb: "Testtown",
       state: "TT",
       postcode: "67890",
       country: "AU",
+      timezone: "Australia/Melbourne",
       created_at: new Date("2024-01-02T00:00:00.000Z"),
       updated_at: new Date("2024-01-02T00:00:00.000Z"),
       archived_at: undefined,
     },
   ];
 
-  // JSON-serialized version for API response comparison
-  const mockPropertiesJson = mockProperties.map((property) => ({
-    ...property,
-    created_at: property.created_at.toISOString(),
-    updated_at: property.updated_at.toISOString(),
-  }));
+  // JSON-serialized version for API response comparison (simplified - just test basic structure)
+  const mockPropertiesJson = [
+    {
+      id: "property-1",
+      ownerManagerSub: "test-manager-sub",
+      name: "Property 1",
+      addressLine1: "123 Test St",
+      suburb: "Testville",
+      state: "TS",
+      postcode: "12345",
+      country: "AU",
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      archivedAt: null,
+    },
+    {
+      id: "property-2",
+      ownerManagerSub: "test-manager-sub",
+      name: "Property 2",
+      addressLine1: "456 Test Ave",
+      addressLine2: "Apt 2B",
+      suburb: "Testtown",
+      state: "TT",
+      postcode: "67890",
+      country: "AU",
+      timezone: "Australia/Melbourne",
+      createdAt: "2024-01-02T00:00:00.000Z",
+      updatedAt: "2024-01-02T00:00:00.000Z",
+      archivedAt: null,
+    },
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -217,5 +260,39 @@ describe("adminListManagerProperties", () => {
     expect(JSON.parse(result.body as string)).toEqual({
       properties: [],
     });
+  });
+
+  it("should serialize archived property with archivedAt timestamp", async () => {
+    const archivedProperty = {
+      id: "property-archived",
+      owner_manager_sub: "test-manager-sub",
+      name: "Archived Property",
+      address_line1: "789 Archived St",
+      address_line2: undefined,
+      suburb: "Archivedville",
+      state: "AV",
+      postcode: "99999",
+      country: "AU",
+      timezone: "Australia/Perth",
+      created_at: new Date("2024-01-01T00:00:00.000Z"),
+      updated_at: new Date("2024-01-15T00:00:00.000Z"),
+      archived_at: new Date("2024-01-20T10:30:00.000Z"),
+    };
+
+    mockListPropertiesByOwner.mockResolvedValue([
+      archivedProperty,
+    ] as Property[]);
+
+    const result = await handler(mockEvent);
+
+    expect(result.statusCode).toBe(200);
+    const response = JSON.parse(result.body as string);
+    expect(response.properties).toHaveLength(1);
+
+    const serializedProperty = response.properties[0];
+    expect(serializedProperty.archivedAt).toBe("2024-01-20T10:30:00.000Z");
+    expect(serializedProperty.id).toBe("property-archived");
+    expect(serializedProperty.name).toBe("Archived Property");
+    expect(serializedProperty.ownerManagerSub).toBe("test-manager-sub");
   });
 });

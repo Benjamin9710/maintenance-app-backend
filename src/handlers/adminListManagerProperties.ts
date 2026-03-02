@@ -9,7 +9,6 @@ import {
 import { requireAdminSession } from "../utils/sessionAuth";
 import { badRequest, forbidden, internalError, ok } from "../utils/responses";
 import { getAuthorizationHeader } from "../utils/apiGateway";
-import { AuthenticationError, AuthorizationError } from "../utils/errors";
 import { logPropertyList } from "../utils/auditLogger";
 import { withAdminRateLimit } from "../utils/rateLimiter";
 
@@ -32,7 +31,7 @@ const transformPropertyForFrontend = (property: Property) => {
     addressLine2: address_line2,
     createdAt: created_at,
     updatedAt: updated_at,
-    archivedAt: archived_at,
+    archivedAt: archived_at || null, // Convert undefined to null for consistent JSON
   };
 };
 
@@ -71,20 +70,25 @@ export const handler = withAdminRateLimit(
     } catch (error) {
       console.error("Error listing properties", error);
 
-      if (error instanceof Error) {
+      // Use type guards for proper error handling
+      if (error && typeof error === "object") {
         // Handle authentication errors
-        if (error instanceof AuthenticationError) {
+        if ("message" in error && typeof error.message === "string") {
           if (
             error.message.includes("Missing Authorization header") ||
             error.message.includes("Invalid Authorization header")
           ) {
             return badRequest("Missing or invalid Authorization header");
           }
-          return badRequest(error.message);
-        }
-        // Handle authorization errors
-        if (error instanceof AuthorizationError) {
-          return forbidden("Admin access required");
+
+          // Check for specific error types by their properties
+          if (error.constructor.name === "AuthenticationError") {
+            return badRequest(error.message);
+          }
+
+          if (error.constructor.name === "AuthorizationError") {
+            return forbidden("Admin access required");
+          }
         }
       }
 
